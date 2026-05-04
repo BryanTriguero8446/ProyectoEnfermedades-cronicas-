@@ -1,0 +1,334 @@
+{% extends 'base.html' %}
+{% block title %}Nuevo Registro Clínico{% endblock %}
+{% block page_title %}Nuevo Registro Clínico{% endblock %}
+{% block nav_nuevo %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+.section-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+.section-card-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e293b;
+}
+.section-card-header i { color: #1a73e8; font-size: 18px; }
+.section-card-body { padding: 20px; }
+.unit-label {
+    background: #f0f4f8;
+    border: 1.5px solid #e2e8f0;
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+.range-hint { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+.imc-preview {
+    background: linear-gradient(135deg, #e8f0fe, #dbeafe);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid #bfdbfe;
+}
+.imc-value { font-size: 32px; font-weight: 700; color: #1a73e8; }
+.imc-label { font-size: 12px; color: #64748b; }
+.toggle-switch { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+.toggle-switch label { font-weight: 500; font-size: 14px; cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-0 mb-3">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0" style="font-size:13px;">
+                <li class="breadcrumb-item"><a href="{% url 'usuarios:dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item active">Nuevo Registro</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<form method="post" id="formClinico" novalidate>
+{% csrf_token %}
+<div class="row g-3">
+
+    <!-- Left column -->
+    <div class="col-lg-8">
+
+        <!-- Datos básicos -->
+        <div class="section-card">
+            <div class="section-card-header">
+                <i class="bi bi-person-badge"></i>Datos Básicos
+            </div>
+            <div class="section-card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Edad <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="edad" id="edad"
+                                   min="1" max="120" placeholder="35" required>
+                            <span class="unit-label">años</span>
+                        </div>
+                        <div class="range-hint">1 – 120 años</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Peso <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="peso" id="peso"
+                                   min="1" max="300" step="0.1" placeholder="70.0" required oninput="calcIMC()">
+                            <span class="unit-label">kg</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Altura <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="altura" id="altura"
+                                   min="0.5" max="2.5" step="0.01" placeholder="1.70" required oninput="calcIMC()">
+                            <span class="unit-label">m</span>
+                        </div>
+                        <div class="range-hint">Ej: 1.70 m</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signos vitales -->
+        <div class="section-card">
+            <div class="section-card-header">
+                <i class="bi bi-heart-pulse"></i>Signos Vitales
+            </div>
+            <div class="section-card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Presión Sistólica <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="presion_sistolica"
+                                   min="50" max="300" placeholder="120" required>
+                            <span class="unit-label">mmHg</span>
+                        </div>
+                        <div class="range-hint">Normal: &lt;120</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Presión Diastólica <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="presion_diastolica"
+                                   min="30" max="200" placeholder="80" required>
+                            <span class="unit-label">mmHg</span>
+                        </div>
+                        <div class="range-hint">Normal: &lt;80</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Glucosa <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="glucosa"
+                                   min="10" max="600" step="0.1" placeholder="90" required>
+                            <span class="unit-label">mg/dL</span>
+                        </div>
+                        <div class="range-hint">Normal: 70–100</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Frec. Cardíaca <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="frecuencia_cardiaca"
+                                   min="30" max="300" placeholder="72" required>
+                            <span class="unit-label">lpm</span>
+                        </div>
+                        <div class="range-hint">Normal: 60–100</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Laboratorio (opcional) -->
+        <div class="section-card">
+            <div class="section-card-header">
+                <i class="bi bi-droplet-half"></i>Laboratorio <span style="font-weight:400;color:#94a3b8;font-size:12px;margin-left:6px;">(opcional)</span>
+            </div>
+            <div class="section-card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Colesterol Total</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="colesterol"
+                                   min="50" max="600" step="0.1" placeholder="180">
+                            <span class="unit-label">mg/dL</span>
+                        </div>
+                        <div class="range-hint">Deseable: &lt;200</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Triglicéridos</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="trigliceridos"
+                                   min="20" max="2000" step="0.1" placeholder="150">
+                            <span class="unit-label">mg/dL</span>
+                        </div>
+                        <div class="range-hint">Normal: &lt;150</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Creatinina</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="creatinina"
+                                   min="0.1" max="20" step="0.01" placeholder="1.0">
+                            <span class="unit-label">mg/dL</span>
+                        </div>
+                        <div class="range-hint">Normal: 0.6–1.2</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estilo de vida -->
+        <div class="section-card">
+            <div class="section-card-header">
+                <i class="bi bi-person-walking"></i>Estilo de Vida
+            </div>
+            <div class="section-card-body">
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label class="form-label">Nivel de actividad física</label>
+                        <select name="actividad_fisica" class="form-select">
+                            <option value="sedentario">🪑 Sedentario — sin ejercicio regular</option>
+                            <option value="leve">🚶 Leve — ejercicio 1–2 veces/semana</option>
+                            <option value="moderado" selected>🏃 Moderado — 3–4 veces/semana</option>
+                            <option value="activo">⚽ Activo — 5+ veces/semana</option>
+                            <option value="muy_activo">🏋️ Muy activo — entrenamiento intenso diario</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="toggle-switch">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="fumador" id="fumador" style="width:42px;height:22px;">
+                                <label class="form-check-label ms-2" for="fumador">
+                                    <i class="bi bi-tornado me-1"></i>Fumador actual
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="toggle-switch">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="alcohol" id="alcohol" style="width:42px;height:22px;">
+                                <label class="form-check-label ms-2" for="alcohol">
+                                    <i class="bi bi-cup-straw me-1"></i>Consumo de alcohol
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Observaciones clínicas</label>
+                        <textarea class="form-control" name="observaciones" rows="3"
+                                  placeholder="Notas adicionales, síntomas, medicamentos..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right column -->
+    <div class="col-lg-4">
+
+        <!-- IMC preview -->
+        <div class="section-card mb-3">
+            <div class="section-card-header">
+                <i class="bi bi-calculator"></i>IMC Calculado
+            </div>
+            <div class="section-card-body">
+                <div class="imc-preview">
+                    <div class="imc-value" id="imc-display">—</div>
+                    <div class="imc-label mt-1" id="imc-clasif">Ingresa peso y altura</div>
+                </div>
+                <div class="mt-3" style="font-size:12px;color:#64748b;">
+                    <div class="d-flex justify-content-between mb-1"><span>Bajo peso</span><span>&lt;18.5</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span>Normal</span><span>18.5–24.9</span></div>
+                    <div class="d-flex justify-content-between mb-1"><span>Sobrepeso</span><span>25–29.9</span></div>
+                    <div class="d-flex justify-content-between"><span>Obesidad</span><span>≥30</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Referencia valores -->
+        <div class="section-card mb-3">
+            <div class="section-card-header">
+                <i class="bi bi-info-circle"></i>Valores de Referencia
+            </div>
+            <div class="section-card-body" style="font-size:12px;color:#475569;">
+                <table class="table table-sm mb-0" style="font-size:12px;">
+                    <thead><tr><th>Parámetro</th><th>Normal</th></tr></thead>
+                    <tbody>
+                        <tr><td>Glucosa ayunas</td><td>70–100 mg/dL</td></tr>
+                        <tr><td>Presión arterial</td><td>&lt;120/80 mmHg</td></tr>
+                        <tr><td>Frec. cardíaca</td><td>60–100 lpm</td></tr>
+                        <tr><td>Colesterol total</td><td>&lt;200 mg/dL</td></tr>
+                        <tr><td>Triglicéridos</td><td>&lt;150 mg/dL</td></tr>
+                        <tr><td>Creatinina</td><td>0.6–1.2 mg/dL</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-save me-2"></i>Guardar registro
+            </button>
+            <a href="{% url 'usuarios:dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x me-1"></i>Cancelar
+            </a>
+        </div>
+
+        <div class="mt-3 p-3 rounded" style="background:#fffbeb;border:1px solid #fde68a;font-size:11.5px;color:#92400e;">
+            <i class="bi bi-lightbulb me-1"></i>
+            Después de guardar podrás ejecutar el análisis predictivo de riesgo.
+        </div>
+
+    </div>
+</div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calcIMC() {
+    const peso = parseFloat(document.getElementById('peso').value);
+    const altura = parseFloat(document.getElementById('altura').value);
+    const disp = document.getElementById('imc-display');
+    const clasif = document.getElementById('imc-clasif');
+
+    if (peso > 0 && altura > 0) {
+        const imc = peso / (altura * altura);
+        disp.textContent = imc.toFixed(1);
+
+        let cat, color;
+        if (imc < 18.5)      { cat = 'Bajo peso';   color = '#3b82f6'; }
+        else if (imc < 25)   { cat = '✓ Normal';     color = '#16a34a'; }
+        else if (imc < 30)   { cat = 'Sobrepeso';    color = '#d97706'; }
+        else if (imc < 35)   { cat = 'Obesidad I';   color = '#dc2626'; }
+        else if (imc < 40)   { cat = 'Obesidad II';  color = '#dc2626'; }
+        else                  { cat = 'Obesidad III'; color = '#7f1d1d'; }
+
+        disp.style.color = color;
+        clasif.textContent = cat;
+    } else {
+        disp.textContent = '—';
+        disp.style.color = '#1a73e8';
+        clasif.textContent = 'Ingresa peso y altura';
+    }
+}
+</script>
+{% endblock %}

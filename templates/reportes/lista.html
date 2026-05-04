@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Reportes{% endblock %}
+{% block page_title %}Reportes{% endblock %}
+{% block nav_reportes %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0" style="font-size:13px;">
+            <li class="breadcrumb-item"><a href="{% url 'usuarios:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Reportes</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- Export cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-icon green"><i class="bi bi-clipboard2-pulse"></i></div>
+                    <div>
+                        <div style="font-size:16px;font-weight:700;">Historial Clínico</div>
+                        <div class="text-muted-sm">Todos tus registros de datos clínicos</div>
+                    </div>
+                </div>
+                <p style="font-size:13px;color:#475569;margin-bottom:16px;">
+                    Exporta tu historial completo de mediciones: glucosa, presión arterial, IMC,
+                    frecuencia cardíaca y más en formato CSV compatible con Excel.
+                </p>
+                <a href="{% url 'reportes:csv_clinico' %}" class="btn btn-success w-100">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i>Descargar CSV — Historial Clínico
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-icon purple"><i class="bi bi-graph-up-arrow"></i></div>
+                    <div>
+                        <div style="font-size:16px;font-weight:700;">Predicciones de Riesgo</div>
+                        <div class="text-muted-sm">Historial completo de análisis predictivos</div>
+                    </div>
+                </div>
+                <p style="font-size:13px;color:#475569;margin-bottom:16px;">
+                    Exporta todos tus análisis de riesgo para las 5 enfermedades crónicas,
+                    incluyendo porcentajes y niveles de riesgo por fecha.
+                </p>
+                <a href="{% url 'reportes:csv_predicciones' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i>Descargar CSV — Predicciones
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Download history -->
+<div class="card">
+    <div class="card-header-custom">
+        <span class="card-title-custom"><i class="bi bi-clock-history"></i>Historial de descargas</span>
+    </div>
+    {% if reportes %}
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>Tipo</th><th>Formato</th><th>Estado</th><th>Generado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reportes %}
+                <tr>
+                    <td>{{ r.get_tipo_display }}</td>
+                    <td>
+                        <span class="badge {% if r.formato == 'csv' %}bg-success{% else %}bg-danger{% endif %}">
+                            <i class="bi bi-file-earmark me-1"></i>{{ r.formato|upper }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if r.estado == 'listo' %}bg-success{% elif r.estado == 'error' %}bg-danger{% else %}bg-warning{% endif %}">
+                            {{ r.get_estado_display }}
+                        </span>
+                    </td>
+                    <td class="text-muted-sm">{{ r.fecha_generacion|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="p-4 empty-state">
+        <i class="bi bi-file-earmark-x" style="font-size:36px;"></i>
+        <p style="font-size:13.5px;">Sin reportes generados todavía. Usa los botones de arriba para exportar.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="mt-3 p-3 rounded" style="background:#eff6ff;border-left:4px solid #3b82f6;font-size:12.5px;color:#1e40af;">
+    <i class="bi bi-info-circle me-2"></i>
+    Los archivos CSV pueden abrirse directamente con Microsoft Excel, Google Sheets o LibreOffice Calc.
+    Incluyen encabezados en español con codificación UTF-8.
+</div>
+{% endblock %}

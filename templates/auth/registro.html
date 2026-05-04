@@ -1,65 +1,108 @@
-html
 {% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Registrarse - ClinicalLens{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/forms.css' %}">
-{% endblock %}
+{% block title %}Crear Cuenta{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-lg">
-            <div class="card-body p-5">
-                <h2 class="card-title text-center mb-4">
-                    <i class="fas fa-user-plus text-primary"></i> Crear Cuenta
-                </h2>
-                
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {% for error in form.non_field_errors %}
-                            <p>{{ error }}</p>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                
-                <form method="post" novalidate>
-                    {% csrf_token %}
-                    
-                    {% for field in form %}
-                        <div class="mb-3">
-                            <label for="{{ field.id_for_label }}" class="form-label">
-                                {{ field.label }}
-                            </label>
-                            {{ field }}
-                            {% if field.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {% for error in field.errors %}
-                                        <i class="fas fa-exclamation-circle"></i> {{ error }}<br>
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                            {% if field.help_text %}
-                                <small class="form-text text-muted">{{ field.help_text|safe }}</small>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                    
-                    <button type="submit" class="btn btn-primary w-100 mb-3">
-                        <i class="fas fa-check"></i> Crear Cuenta
-                    </button>
-                </form>
-                
-                <hr>
-                
-                <p class="text-center mb-0">
-                    ¿Ya tienes cuenta? 
-                    <a href="{% url 'usuarios:login' %}">Inicia sesión</a>
-                </p>
-            </div>
+<div class="auth-card auth-wide">
+    <div class="auth-card-header">
+        <div class="auth-brand-icon">
+            <i class="bi bi-heart-pulse-fill"></i>
         </div>
+        <div class="auth-title">Crear cuenta</div>
+        <div class="auth-subtitle">Comienza a monitorear tu salud hoy</div>
+    </div>
+    <div class="auth-body">
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <label class="form-label" for="id_nombre">Nombre</label>
+                    <input type="text" class="form-control {% if form.nombre.errors %}is-invalid{% endif %}"
+                           id="id_nombre" name="nombre"
+                           value="{{ form.nombre.value|default:'' }}"
+                           placeholder="Tu nombre" required>
+                    {% if form.nombre.errors %}
+                    <div class="invalid-feedback">{{ form.nombre.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label" for="id_apellido">Apellido</label>
+                    <input type="text" class="form-control {% if form.apellido.errors %}is-invalid{% endif %}"
+                           id="id_apellido" name="apellido"
+                           value="{{ form.apellido.value|default:'' }}"
+                           placeholder="Tu apellido" required>
+                    {% if form.apellido.errors %}
+                    <div class="invalid-feedback">{{ form.apellido.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="id_correo">Correo electrónico</label>
+                    <input type="email" class="form-control {% if form.correo.errors %}is-invalid{% endif %}"
+                           id="id_correo" name="correo"
+                           value="{{ form.correo.value|default:'' }}"
+                           placeholder="ejemplo@correo.com" required>
+                    {% if form.correo.errors %}
+                    <div class="invalid-feedback">{{ form.correo.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label" for="id_password1">Contraseña</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control {% if form.password1.errors %}is-invalid{% endif %}"
+                               id="id_password1" name="password1" placeholder="Mínimo 8 caracteres" required>
+                        <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePwd('id_password1', this)" tabindex="-1">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    {% if form.password1.errors %}
+                    <div class="text-danger" style="font-size:12px;margin-top:4px;">{{ form.password1.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label" for="id_password2">Confirmar contraseña</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control {% if form.password2.errors %}is-invalid{% endif %}"
+                               id="id_password2" name="password2" placeholder="Repite tu contraseña" required>
+                        <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePwd('id_password2', this)" tabindex="-1">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    {% if form.password2.errors %}
+                    <div class="text-danger" style="font-size:12px;margin-top:4px;">{{ form.password2.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-3 p-3 rounded" style="background:#f0f4f8;font-size:12px;color:#64748b;">
+                <i class="bi bi-info-circle me-1"></i>
+                La contraseña debe tener al menos 8 caracteres y no ser completamente numérica.
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 btn-lg mt-4">
+                <i class="bi bi-person-plus me-2"></i>Crear mi cuenta
+            </button>
+        </form>
+
+        <hr class="divider mt-4">
+        <p class="text-center mb-0" style="font-size:13px;color:#64748b;">
+            ¿Ya tienes cuenta?
+            <a href="{% url 'usuarios:login' %}" class="text-primary fw-semibold">Inicia sesión</a>
+        </p>
     </div>
 </div>
+<script>
+function togglePwd(id, btn) {
+    const input = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    icon.className = input.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+</script>
 {% endblock %}

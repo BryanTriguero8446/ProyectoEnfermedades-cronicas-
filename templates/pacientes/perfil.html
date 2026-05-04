@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Mi Perfil{% endblock %}
+{% block page_title %}Mi Perfil{% endblock %}
+{% block nav_perfil %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0" style="font-size:13px;">
+            <li class="breadcrumb-item"><a href="{% url 'usuarios:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Mi Perfil</li>
+        </ol>
+    </nav>
+    <a href="{% url 'pacientes:editar_perfil' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-pencil me-1"></i>Editar perfil
+    </a>
+</div>
+
+<div class="row g-3">
+    <!-- Profile card -->
+    <div class="col-lg-4">
+        <div class="card text-center p-4">
+            {% if perfil.foto %}
+            <img src="{{ perfil.foto.url }}" alt="Foto de perfil"
+                 style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin:0 auto 16px;">
+            {% else %}
+            <div style="width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#1a73e8,#0d1b2a);
+                        display:flex;align-items:center;justify-content:center;margin:0 auto 16px;
+                        font-size:36px;font-weight:700;color:#fff;">
+                {{ user.nombre|slice:":1" }}{{ user.apellido|slice:":1" }}
+            </div>
+            {% endif %}
+            <h4 style="font-size:18px;font-weight:700;margin-bottom:4px;">
+                {{ user.nombre }} {{ user.apellido }}
+            </h4>
+            <p class="text-muted-sm mb-1">{{ user.correo }}</p>
+            <span class="badge bg-primary mt-1">{{ user.get_rol_display }}</span>
+
+            {% if perfil.edad %}
+            <hr class="divider mt-3">
+            <div class="row g-2 mt-1">
+                <div class="col-4">
+                    <div style="font-size:18px;font-weight:700;color:#1a73e8;">{{ perfil.edad }}</div>
+                    <div class="text-muted-sm">años</div>
+                </div>
+                <div class="col-4">
+                    <div style="font-size:14px;font-weight:700;color:#1a73e8;">
+                        {{ perfil.get_sexo_display|default:"—" }}
+                    </div>
+                    <div class="text-muted-sm">Sexo</div>
+                </div>
+                <div class="col-4">
+                    <div style="font-size:12px;font-weight:700;color:#1a73e8;">
+                        {{ user.fecha_registro|date:"Y" }}
+                    </div>
+                    <div class="text-muted-sm">Desde</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Info cards -->
+    <div class="col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header-custom">
+                <span class="card-title-custom"><i class="bi bi-person-lines-fill"></i>Información Personal</span>
+            </div>
+            <div class="p-4">
+                <div class="row g-3">
+                    {% include 'pacientes/_info_row.html' with label="Nombre completo" value=user.nombre|add:" "|add:user.apellido %}
+                    {% include 'pacientes/_info_row.html' with label="Correo electrónico" value=user.correo %}
+                    {% include 'pacientes/_info_row.html' with label="Teléfono" value=perfil.telefono|default:"No registrado" %}
+                    {% include 'pacientes/_info_row.html' with label="Fecha de nacimiento" value=perfil.fecha_nacimiento|date:"d/m/Y"|default:"No registrado" %}
+                    {% include 'pacientes/_info_row.html' with label="Sexo" value=perfil.get_sexo_display|default:"No registrado" %}
+                    {% include 'pacientes/_info_row.html' with label="Ocupación" value=perfil.ocupacion|default:"No registrado" %}
+                    {% include 'pacientes/_info_row.html' with label="Dirección" value=perfil.direccion|default:"No registrado" %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header-custom">
+                <span class="card-title-custom"><i class="bi bi-heart-pulse"></i>Antecedentes Médicos</span>
+            </div>
+            <div class="p-4">
+                <div class="mb-3">
+                    <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:6px;">
+                        Antecedentes familiares
+                    </div>
+                    <div style="font-size:14px;color:#1e293b;">
+                        {{ perfil.antecedentes_familiares|default:"No registrado" }}
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:6px;">
+                        Alergias conocidas
+                    </div>
+                    <div style="font-size:14px;color:#1e293b;">
+                        {{ perfil.alergias|default:"No registrado" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account -->
+        <div class="card">
+            <div class="card-header-custom">
+                <span class="card-title-custom"><i class="bi bi-shield-lock"></i>Seguridad de la cuenta</span>
+            </div>
+            <div class="p-4">
+                <div class="row g-3">
+                    {% include 'pacientes/_info_row.html' with label="Fecha de registro" value=user.fecha_registro|date:"d/m/Y H:i" %}
+                    {% include 'pacientes/_info_row.html' with label="Estado de cuenta" value="Activa" %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

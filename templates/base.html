@@ -1,103 +1,114 @@
-html
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ClinicalLens - Predicción de Enfermedades{% endblock %}</title>
-    
-    <!-- Bootstrap CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- CSS propio -->
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    
+    <title>{% block title %}ClinicalLens{% endblock %} | Sistema Predictivo de Salud</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
-<body>
-    <!-- NAVBAR -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-heartbeat"></i> ClinicalLens
-            </a>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'usuarios:dashboard' %}">
-                                <i class="fas fa-chart-line"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle"></i> {{ user.nombre }}
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="{% url 'usuarios:perfil' %}">Mi Perfil</a></li>
-                                <li><a class="dropdown-item" href="{% url 'usuarios:cambiar_password' %}">Cambiar Contraseña</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'usuarios:logout' %}">Cerrar Sesión</a></li>
-                            </ul>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'usuarios:login' %}">
-                                <i class="fas fa-sign-in-alt"></i> Ingresar
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'usuarios:registro' %}">
-                                <i class="fas fa-user-plus"></i> Registrarse
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
+<body class="{% if user.is_authenticated %}app-layout{% else %}auth-layout{% endif %}">
+
+{% if user.is_authenticated %}
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon"><i class="bi bi-heart-pulse-fill"></i></div>
+        <span class="brand-text">ClinicalLens</span>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section-label">Principal</div>
+        <a href="{% url 'usuarios:dashboard' %}" class="nav-link-item {% block nav_dashboard %}{% endblock %}">
+            <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+        </a>
+        <a href="{% url 'clinico:nuevo_registro' %}" class="nav-link-item {% block nav_nuevo %}{% endblock %}">
+            <i class="bi bi-plus-circle"></i><span>Nuevo Registro</span>
+        </a>
+        <a href="{% url 'clinico:historial' %}" class="nav-link-item {% block nav_historial %}{% endblock %}">
+            <i class="bi bi-clock-history"></i><span>Historial Clínico</span>
+        </a>
+        <a href="{% url 'prediccion:historial' %}" class="nav-link-item {% block nav_predicciones %}{% endblock %}">
+            <i class="bi bi-graph-up-arrow"></i><span>Predicciones</span>
+        </a>
+
+        <div class="nav-section-label">Gestión</div>
+        <a href="{% url 'alertas:lista' %}" class="nav-link-item {% block nav_alertas %}{% endblock %}" id="nav-alertas">
+            <i class="bi bi-bell"></i>
+            <span>Alertas</span>
+            <span class="badge-count" id="alertas-badge" style="display:none"></span>
+        </a>
+        <a href="{% url 'reportes:lista' %}" class="nav-link-item {% block nav_reportes %}{% endblock %}">
+            <i class="bi bi-file-earmark-text"></i><span>Reportes</span>
+        </a>
+        <a href="{% url 'pacientes:perfil' %}" class="nav-link-item {% block nav_perfil %}{% endblock %}">
+            <i class="bi bi-person-circle"></i><span>Mi Perfil</span>
+        </a>
     </nav>
 
-    <!-- CONTENIDO PRINCIPAL -->
-    <main class="py-4">
-        <div class="container">
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-            
-            {% block content %}
-            {% endblock %}
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <div class="user-avatar">{{ user.nombre|slice:":1" }}{{ user.apellido|slice:":1" }}</div>
+            <div class="user-details">
+                <span class="user-name">{{ user.nombre }} {{ user.apellido }}</span>
+                <span class="user-role">{{ user.get_rol_display }}</span>
+            </div>
         </div>
+        <a href="{% url 'usuarios:logout' %}" class="btn-logout" title="Cerrar sesión">
+            <i class="bi bi-box-arrow-right"></i>
+        </a>
+    </div>
+</aside>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="main-wrapper">
+    <header class="top-bar">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+            <i class="bi bi-list"></i>
+        </button>
+        <h1 class="page-title">{% block page_title %}Panel Principal{% endblock %}</h1>
+        <div class="top-bar-actions">
+            <a href="{% url 'alertas:lista' %}" class="icon-btn" title="Alertas" id="alertas-topbar">
+                <i class="bi bi-bell"></i>
+                <span class="dot-badge" id="alertas-dot" style="display:none"></span>
+            </a>
+            <a href="{% url 'clinico:nuevo_registro' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg"></i> Nuevo Registro
+            </a>
+        </div>
+    </header>
+
+    <main class="content-area">
+        {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}exclamation-octagon{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
     </main>
+</div>
 
-    <!-- FOOTER -->
-    <footer class="bg-dark text-white text-center py-4 mt-5">
-        <div class="container">
-            <p>&copy; 2026 ClinicalLens - Universidad Franz Tamayo. Todos los derechos reservados.</p>
-            <small>Proyecto Académico - Asignatura: Testing & QA</small>
-        </div>
-    </footer>
+{% else %}
+<!-- ===== AUTH LAYOUT ===== -->
+<div class="auth-container">
+    {% block content %}{% endblock %}
+</div>
+{% endif %}
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- JavaScript propio -->
-    {% load static %}
-    <script src="{% static 'js/main.js' %}"></script>
-    
-    {% block extra_js %}{% endblock %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

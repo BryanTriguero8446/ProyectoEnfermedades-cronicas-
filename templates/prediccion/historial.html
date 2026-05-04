@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Historial de Predicciones{% endblock %}
+{% block page_title %}Historial de Predicciones{% endblock %}
+{% block nav_predicciones %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0" style="font-size:13px;">
+            <li class="breadcrumb-item"><a href="{% url 'usuarios:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Predicciones</li>
+        </ol>
+    </nav>
+    <div class="d-flex gap-2">
+        <a href="{% url 'reportes:csv_predicciones' %}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-download me-1"></i>Exportar CSV
+        </a>
+        <a href="{% url 'clinico:nuevo_registro' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>Nuevo registro
+        </a>
+    </div>
+</div>
+
+{% if predicciones %}
+<div class="row g-3">
+    {% for p in predicciones %}
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header-custom">
+                <span class="card-title-custom">
+                    <i class="bi bi-graph-up-arrow"></i>Análisis #{{ p.pk }}
+                </span>
+                <span class="badge-nivel {{ p.nivel_general }}">{{ p.nivel_general }}</span>
+            </div>
+            <div class="p-4">
+                <!-- 5 mini bars -->
+                {% for nombre, riesgo, nivel in p.nivel_diabetes,p.riesgo_diabetes %}{% endfor %}
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:12.5px;">
+                        <span><i class="bi bi-droplet me-1" style="color:#e67e22;"></i>Diabetes</span>
+                        <span><span class="badge-nivel {{ p.nivel_diabetes }}" style="padding:2px 8px;font-size:10px;">{{ p.nivel_diabetes }}</span> <strong>{{ p.riesgo_diabetes }}%</strong></span>
+                    </div>
+                    <div class="risk-bar-wrap" style="height:6px;"><div class="risk-bar {{ p.nivel_diabetes }}" style="width:{{ p.riesgo_diabetes }}%"></div></div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:12.5px;">
+                        <span><i class="bi bi-heart-pulse me-1" style="color:#e74c3c;"></i>Hipertensión</span>
+                        <span><span class="badge-nivel {{ p.nivel_hipertension }}" style="padding:2px 8px;font-size:10px;">{{ p.nivel_hipertension }}</span> <strong>{{ p.riesgo_hipertension }}%</strong></span>
+                    </div>
+                    <div class="risk-bar-wrap" style="height:6px;"><div class="risk-bar {{ p.nivel_hipertension }}" style="width:{{ p.riesgo_hipertension }}%"></div></div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:12.5px;">
+                        <span><i class="bi bi-activity me-1" style="color:#9b59b6;"></i>Renal</span>
+                        <span><span class="badge-nivel {{ p.nivel_renal }}" style="padding:2px 8px;font-size:10px;">{{ p.nivel_renal }}</span> <strong>{{ p.riesgo_renal }}%</strong></span>
+                    </div>
+                    <div class="risk-bar-wrap" style="height:6px;"><div class="risk-bar {{ p.nivel_renal }}" style="width:{{ p.riesgo_renal }}%"></div></div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:12.5px;">
+                        <span><i class="bi bi-shield me-1" style="color:#27ae60;"></i>Hígado Graso</span>
+                        <span><span class="badge-nivel {{ p.nivel_nafld }}" style="padding:2px 8px;font-size:10px;">{{ p.nivel_nafld }}</span> <strong>{{ p.riesgo_nafld }}%</strong></span>
+                    </div>
+                    <div class="risk-bar-wrap" style="height:6px;"><div class="risk-bar {{ p.nivel_nafld }}" style="width:{{ p.riesgo_nafld }}%"></div></div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:12.5px;">
+                        <span><i class="bi bi-heart me-1" style="color:#c0392b;"></i>Cardíaco</span>
+                        <span><span class="badge-nivel {{ p.nivel_cardiaco }}" style="padding:2px 8px;font-size:10px;">{{ p.nivel_cardiaco }}</span> <strong>{{ p.riesgo_cardiaco }}%</strong></span>
+                    </div>
+                    <div class="risk-bar-wrap" style="height:6px;"><div class="risk-bar {{ p.nivel_cardiaco }}" style="width:{{ p.riesgo_cardiaco }}%"></div></div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted-sm">{{ p.fecha_prediccion|date:"d/m/Y H:i" }}</span>
+                    <a href="{% url 'prediccion:resultado' p.pk %}" class="btn btn-outline-primary btn-sm">
+                        Ver detalle <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="p-5 empty-state">
+        <i class="bi bi-graph-up-arrow"></i>
+        <p>Aún no tienes análisis de riesgo.</p>
+        <a href="{% url 'clinico:nuevo_registro' %}" class="btn btn-primary mt-2">
+            <i class="bi bi-plus-lg me-1"></i>Registrar datos y analizar
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

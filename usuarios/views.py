@@ -110,12 +110,39 @@ def registro_view(request):
 @login_required(login_url='usuarios:login')
 def dashboard_view(request):
     """Panel principal del usuario."""
+    from clinico.models import DatosClinico
+    from prediccion.models import Prediccion
+    from alertas.models import Alerta
+
+    es_admin = request.user.rol == 'administrador'
+
     context = {
         'usuario': request.user,
-        'es_paciente': request.user.rol == 'paciente' if hasattr(request.user, 'rol') else False,
-        'es_admin': request.user.rol == 'administrador' if hasattr(request.user, 'rol') else False,
+        'es_admin': es_admin,
     }
-    return render(request, 'paciente/dashboard.html', context)
+
+    if es_admin:
+        context.update({
+            'total_pacientes': Usuario.objects.filter(rol='paciente', activo=True).count(),
+            'total_registros': DatosClinico.objects.count(),
+            'total_predicciones': Prediccion.objects.count(),
+            'alertas_pendientes': Alerta.objects.filter(leida=False).count(),
+            'ultimos_registros': DatosClinico.objects.select_related('paciente').order_by('-fecha_registro')[:10],
+        })
+    else:
+        ultimo_registro = DatosClinico.objects.filter(paciente=request.user).first()
+        ultima_prediccion = Prediccion.objects.filter(paciente=request.user).first()
+        alertas_no_leidas = Alerta.objects.filter(paciente=request.user, leida=False).count()
+        total_registros = DatosClinico.objects.filter(paciente=request.user).count()
+
+        context.update({
+            'ultimo_registro': ultimo_registro,
+            'ultima_prediccion': ultima_prediccion,
+            'alertas_no_leidas': alertas_no_leidas,
+            'total_registros': total_registros,
+        })
+
+    return render(request, 'dashboard/index.html', context)
 
 
 # ============= VISTAS API REST =============

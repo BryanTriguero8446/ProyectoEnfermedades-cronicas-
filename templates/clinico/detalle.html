@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% block title %}Detalle del Registro{% endblock %}
+{% block page_title %}Detalle del Registro{% endblock %}
+{% block nav_historial %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0" style="font-size:13px;">
+            <li class="breadcrumb-item"><a href="{% url 'usuarios:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'clinico:historial' %}">Historial</a></li>
+            <li class="breadcrumb-item active">Registro #{{ registro.pk }}</li>
+        </ol>
+    </nav>
+    {% if not registro.predicciones.exists %}
+    <a href="{% url 'prediccion:nueva' registro.pk %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-graph-up-arrow me-1"></i>Analizar riesgo
+    </a>
+    {% else %}
+    <a href="{% url 'prediccion:resultado' registro.predicciones.first.pk %}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-bar-chart me-1"></i>Ver predicción
+    </a>
+    {% endif %}
+</div>
+
+<!-- Header card -->
+<div class="card mb-3" style="background:linear-gradient(135deg,#0d1b2a,#1a73e8);color:#fff;border:none;">
+    <div class="p-4">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <div style="width:56px;height:56px;background:rgba(255,255,255,.15);border-radius:14px;
+                            display:flex;align-items:center;justify-content:center;font-size:26px;">
+                    <i class="bi bi-clipboard2-pulse"></i>
+                </div>
+            </div>
+            <div class="col">
+                <h4 class="mb-1" style="font-weight:700;">Registro Clínico #{{ registro.pk }}</h4>
+                <p class="mb-0" style="opacity:.8;font-size:13px;">
+                    {{ registro.fecha_registro|date:"d \d\e F \d\e Y \a \l\a\s H:i" }}
+                </p>
+            </div>
+            <div class="col-auto text-end">
+                {% if registro.predicciones.exists %}
+                <span class="badge-nivel {{ registro.predicciones.first.nivel_general }}"
+                      style="font-size:13px;padding:6px 16px;">
+                    Riesgo {{ registro.predicciones.first.nivel_general|upper }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Left: data -->
+    <div class="col-lg-8">
+
+        <!-- Signos vitales -->
+        <div class="card mb-3">
+            <div class="card-header-custom">
+                <span class="card-title-custom"><i class="bi bi-heart-pulse"></i>Signos Vitales & Biometría</span>
+            </div>
+            <div class="p-4">
+                <div class="data-grid">
+                    <div class="data-item">
+                        <div class="data-item-value">{{ registro.glucosa }}</div>
+                        <div class="data-item-unit">mg/dL</div>
+                        <div class="data-item-label">Glucosa</div>
+                        <div class="mt-1">
+                            {% with g=registro.clasificacion_glucosa %}
+                            <span class="badge bg-{{ g.1 }}" style="font-size:10px;">{{ g.0 }}</span>
+                            {% endwith %}
+                        </div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-value" style="font-size:18px;">
+                            {{ registro.presion_sistolica }}/{{ registro.presion_diastolica }}
+                        </div>
+                        <div class="data-item-unit">mmHg</div>
+                        <div class="data-item-label">Presión arterial</div>
+                        <div class="mt-1">
+                            {% with p=registro.clasificacion_presion %}
+                            <span class="badge bg-{{ p.1 }}" style="font-size:10px;">{{ p.0 }}</span>
+                            {% endwith %}
+                        </div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-value">{{ registro.frecuencia_cardiaca }}</div>
+                        <div class="data-item-unit">lpm</div>
+                        <div class="data-item-label">Frec. cardíaca</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-value">{{ registro.imc|floatformat:1 }}</div>
+                        <div class="data-item-unit">kg/m²</div>
+                        <div class="data-item-label">IMC</div>
+                        <div class="mt-1" style="font-size:10px;color:#64748b;">{{ registro.clasificacion_imc }}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-value">{{ registro.peso }}</div>
+                        <div class="data-item-unit">kg</div>
+                        <div class="data-item-label">Peso</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-value">{{ registro.altura }}</div>
+                        <div class="data-item-unit">m</div>
+                        <div class="data-item-label">Altura</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Laboratorio -->
+        {% if registro.colesterol or registro.trigliceridos or registro.creatinina %}
+        <div class="card mb-3">
+            <div class="card-header-custom">
+                <span class="card-title-custom"><i class="bi bi-droplet-half"></i>Laboratorio</span>
+            </div>
+            <div class="p-4">
+                <div class="data-grid">
+                    {% if registro.colesterol %}
+                    <div class="data-item">
+                        <div class="data-item-value">{{ registro.colesterol }}</div>
+                        <div class="data-item-unit">mg/dL</div>
+                        <div class="data-item-label">Colesterol total</div>
+                    </div>
+                    {% endif %}
+                    {% if registro.trigliceridos %}
+                    <div class="data-item">
+                        <div class="data-item-value">{{ registro.trigliceridos }}</div>
+                        <div class="data-item-unit">mg/dL</div>
+                        <div class="data-item-label">Triglicéridos</div>
+                    </div>
+                    {% endif %}
+                    {% if registro.creatinina %}
+                    <div class="data-item">
+                        <div class="data-item-value">{{ registro.creatinina }}</div>
+                        <div class="data-item-unit">mg/dL</div>
+                        <div class="data-item-label">Creatinina</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Estilo de vida -->
+        <div class="card mb-3">
+            <div class="card-header-custom">
+                <span class="card-title-custom"><i class="bi bi-person-walking"></i>Estilo de Vida</span>
+            </div>
+            <div class="p-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="data-item text-start">
+                            <div style="font-size:12px;color:#64748b;margin-bottom:4px;">Actividad física</div>
+                            <div style="font-weight:600;">{{ registro.get_actividad_fisica_display }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="data-item text-start">
+                            <div style="font-size:12px;color:#64748b;margin-bottom:4px;">Fumador</div>
+                            <div style="font-weight:600;">
+                                {% if registro.fumador %}
+                                <span style="color:#dc2626;"><i class="bi bi-check-circle-fill me-1"></i>Sí</span>
+                                {% else %}
+                                <span style="color:#16a34a;"><i class="bi bi-x-circle-fill me-1"></i>No</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="data-item text-start">
+                            <div style="font-size:12px;color:#64748b;margin-bottom:4px;">Alcohol</div>
+                            <div style="font-weight:600;">
+                                {% if registro.alcohol %}
+                                <span style="color:#d97706;"><i class="bi bi-check-circle-fill me-1"></i>Sí</span>
+                                {% else %}
+                                <span style="color:#16a34a;"><i class="bi bi-x-circle-fill me-1"></i>No</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% if registro.observaciones %}
+                    <div class="col-12">
+                        <div style="background:#f8fafc;border-radius:8px;padding:14px;font-size:13.5px;color:#475569;">
+                            <strong>Observaciones:</strong> {{ registro.observaciones }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: alerts & prediction summary -->
+    <div class="col-lg-4">
+        <!-- Alertas de este registro -->
+        <div class="card mb-3">
+            <div class="card-header-custom">
+                <span class="card-title-custom"><i class="bi bi-bell"></i>Alertas generadas</span>
+                <span class="badge bg-danger" style="font-size:11px;">{{ alertas.count }}</span>
+            </div>
+            <div class="p-3">
+                {% for a in alertas %}
+                <div class="alert alert-{{ a.color_badge }} mb-2" style="font-size:12.5px;padding:10px 12px;">
+                    <i class="{{ a.icono }} me-1"></i>{{ a.mensaje }}
+                </div>
+                {% empty %}
+                <div class="text-center py-3" style="color:#94a3b8;font-size:13px;">
+                    <i class="bi bi-check-circle" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+                    Sin alertas para este registro
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Predicción resumen -->
+        <div class="card">
+            <div class="card-header-custom">
+                <span class="card-title-custom"><i class="bi bi-graph-up-arrow"></i>Análisis de riesgo</span>
+            </div>
+            <div class="p-3">
+                {% if predicciones %}
+                {% with p=predicciones.first %}
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:13px;">
+                        <span>Diabetes</span><strong>{{ p.riesgo_diabetes }}%</strong>
+                    </div>
+                    <div class="risk-bar-wrap"><div class="risk-bar {{ p.nivel_diabetes }}" style="width:{{ p.riesgo_diabetes }}%"></div></div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:13px;">
+                        <span>Hipertensión</span><strong>{{ p.riesgo_hipertension }}%</strong>
+                    </div>
+                    <div class="risk-bar-wrap"><div class="risk-bar {{ p.nivel_hipertension }}" style="width:{{ p.riesgo_hipertension }}%"></div></div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:13px;">
+                        <span>Cardíaco</span><strong>{{ p.riesgo_cardiaco }}%</strong>
+                    </div>
+                    <div class="risk-bar-wrap"><div class="risk-bar {{ p.nivel_cardiaco }}" style="width:{{ p.riesgo_cardiaco }}%"></div></div>
+                </div>
+                <a href="{% url 'prediccion:resultado' p.pk %}" class="btn btn-outline-primary btn-sm w-100 mt-2">
+                    Ver análisis completo
+                </a>
+                {% endwith %}
+                {% else %}
+                <div class="text-center py-3" style="color:#94a3b8;font-size:13px;">
+                    <i class="bi bi-graph-up-arrow" style="font-size:28px;display:block;margin-bottom:10px;opacity:.4;"></i>
+                    Sin análisis aún
+                </div>
+                <a href="{% url 'prediccion:nueva' registro.pk %}" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-play-circle me-1"></i>Ejecutar análisis
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

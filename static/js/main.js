@@ -1,105 +1,101 @@
-/**
- * ClinicalLens - JavaScript Principal
- * Funciones globales, validación, etc.
- */
+/* ClinicalLens — main.js */
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('ClinicalLens cargado');
-    
-    // Validación Bootstrap
-    validarFormulariosBootstrap();
-    
-    // Tooltips y Popovers
-    inicializarTooltips();
-});
+// ── Sidebar toggle ──────────────────────────────────────────────────────────
+(function () {
+  const sidebar = document.getElementById('sidebar');
+  const toggle = document.getElementById('sidebarToggle');
+  if (!sidebar || !toggle) return;
 
-/**
- * Validación de formularios con Bootstrap
- */
-function validarFormulariosBootstrap() {
-    const formularios = document.querySelectorAll('form');
-    
-    Array.from(formularios).forEach(form => {
-        form.addEventListener('submit', event => {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            form.classList.add('was-validated');
-        }, false);
+  const overlay = document.createElement('div');
+  overlay.className = 'sidebar-overlay';
+  document.body.appendChild(overlay);
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  toggle.addEventListener('click', () =>
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar()
+  );
+  overlay.addEventListener('click', closeSidebar);
+})();
+
+// ── Alerts badge ────────────────────────────────────────────────────────────
+(function () {
+  if (!document.getElementById('alertas-badge')) return;
+
+  function updateAlertasBadge() {
+    fetch('/alertas/api/count/')
+      .then(r => r.json())
+      .then(data => {
+        const count = data.count || 0;
+        const badge = document.getElementById('alertas-badge');
+        const dot   = document.getElementById('alertas-dot');
+        if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'inline-block' : 'none'; }
+        if (dot)   { dot.style.display = count > 0 ? 'block' : 'none'; }
+      })
+      .catch(() => {});
+  }
+
+  updateAlertasBadge();
+  setInterval(updateAlertasBadge, 60000);
+})();
+
+// ── Mark alert as read ──────────────────────────────────────────────────────
+function marcarLeida(pk, btn) {
+  fetch('/alertas/marcar/' + pk + '/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        const row = btn.closest('.alerta-row') || btn.closest('tr');
+        if (row) row.style.opacity = '.45';
+        btn.disabled = true;
+        btn.textContent = 'Leída';
+      }
     });
 }
 
-/**
- * Inicializar tooltips de Bootstrap
- */
-function inicializarTooltips() {
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+function marcarTodasLeidas() {
+  fetch('/alertas/marcar-todas/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+  }).then(() => window.location.reload());
 }
 
-/**
- * Mostrar alerta personalizada
- */
-function mostrarAlerta(mensaje, tipo = 'info') {
-    const tipoAlert = `alert-${tipo}`;
-    const html = `
-        <div class="alert ${tipoAlert} alert-dismissible fade show" role="alert">
-            ${mensaje}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `;
-    
-    const container = document.querySelector('main .container');
-    container.insertAdjacentHTML('afterbegin', html);
-}
-
-/**
- * Confirmar acción
- */
-function confirmar(mensaje = '¿Estás seguro?') {
-    return confirm(mensaje);
-}
-
-/**
- * Mostrar spinner de carga
- */
-function mostrarCarga() {
-    const spinner = document.createElement('div');
-    spinner.className = 'spinner-border';
-    spinner.innerHTML = '<span class="visually-hidden">Cargando...</span>';
-    document.body.appendChild(spinner);
-}
-
-/**
- * Ocultar spinner
- */
-function ocultarCarga() {
-    const spinners = document.querySelectorAll('.spinner-border');
-    spinners.forEach(s => s.remove());
-}
-
-/**
- * Exportar a CSV
- */
-function exportarCSV(datos, nombre = 'datos.csv') {
-    let csv = '';
-    
-    // Headers
-    if (datos.length > 0) {
-        csv = Object.keys(datos[0]).join(',') + '\n';
-        
-        // Filas
-        datos.forEach(fila => {
-            csv += Object.values(fila).join(',') + '\n';
-        });
+// ── CSRF helper ─────────────────────────────────────────────────────────────
+function getCookie(name) {
+  let cv = null;
+  if (document.cookie) {
+    for (const c of document.cookie.split(';')) {
+      const t = c.trim();
+      if (t.startsWith(name + '=')) { cv = decodeURIComponent(t.slice(name.length + 1)); break; }
     }
-    
-    // Descargar
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = nombre;
-    link.click();
+  }
+  return cv;
 }
+
+// ── Auto-dismiss alerts ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.alert.alert-dismissible').forEach(el => {
+    setTimeout(() => {
+      const inst = bootstrap.Alert.getOrCreateInstance(el);
+      if (inst) inst.close();
+    }, 6000);
+  });
+
+  // Tooltips
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el =>
+    new bootstrap.Tooltip(el)
+  );
+});

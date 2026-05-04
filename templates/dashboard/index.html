@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+.welcome-banner {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1a73e8 100%);
+    border-radius: 16px;
+    padding: 28px 32px;
+    color: #fff;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+.welcome-text h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.welcome-text p  { font-size: 13.5px; opacity: .8; margin: 0; }
+.welcome-cta { display: flex; gap: 10px; flex-shrink: 0; }
+.quick-action {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: #1e293b;
+    transition: transform .2s, box-shadow .2s;
+    text-align: center;
+}
+.quick-action:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.08); color: #1a73e8; }
+.quick-action i { font-size: 28px; }
+.quick-action span { font-size: 12.5px; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if es_admin %}
+<!-- ===== ADMIN DASHBOARD ===== -->
+<div class="welcome-banner">
+    <div class="welcome-text">
+        <h2>Panel de Administración</h2>
+        <p>Gestiona y monitorea el sistema ClinicalLens</p>
+    </div>
+    <a href="/admin/" class="btn btn-light btn-sm">
+        <i class="bi bi-gear me-1"></i>Django Admin
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="bi bi-people"></i></div>
+            <div>
+                <div class="stat-value">{{ total_pacientes }}</div>
+                <div class="stat-label">Pacientes registrados</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="bi bi-clipboard2-pulse"></i></div>
+            <div>
+                <div class="stat-value">{{ total_registros }}</div>
+                <div class="stat-label">Registros clínicos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="bi bi-graph-up-arrow"></i></div>
+            <div>
+                <div class="stat-value">{{ total_predicciones }}</div>
+                <div class="stat-label">Predicciones realizadas</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon red"><i class="bi bi-bell"></i></div>
+            <div>
+                <div class="stat-value">{{ alertas_pendientes }}</div>
+                <div class="stat-label">Alertas sin leer</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header-custom">
+        <span class="card-title-custom"><i class="bi bi-clock-history"></i>Últimos registros clínicos</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>Paciente</th><th>Glucosa</th><th>Presión</th><th>IMC</th><th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in ultimos_registros %}
+                <tr>
+                    <td>{{ r.paciente.nombre }} {{ r.paciente.apellido }}</td>
+                    <td>{{ r.glucosa }} mg/dL</td>
+                    <td>{{ r.presion_sistolica }}/{{ r.presion_diastolica }} mmHg</td>
+                    <td>{{ r.imc }}</td>
+                    <td class="text-muted-sm">{{ r.fecha_registro|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-4">Sin registros aún</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% else %}
+<!-- ===== PATIENT DASHBOARD ===== -->
+<div class="welcome-banner">
+    <div class="welcome-text">
+        <h2>¡Hola, {{ usuario.nombre }}!</h2>
+        <p>Monitorea tu salud y obtén predicciones de riesgo personalizadas</p>
+    </div>
+    <div class="welcome-cta">
+        <a href="{% url 'clinico:nuevo_registro' %}" class="btn btn-light btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>Nuevo registro
+        </a>
+    </div>
+</div>
+
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <a href="{% url 'clinico:historial' %}" class="stat-card">
+            <div class="stat-icon blue"><i class="bi bi-clipboard2-pulse"></i></div>
+            <div>
+                <div class="stat-value">{{ total_registros }}</div>
+                <div class="stat-label">Registros clínicos</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="{% url 'prediccion:historial' %}" class="stat-card">
+            <div class="stat-icon purple"><i class="bi bi-graph-up-arrow"></i></div>
+            <div>
+                <div class="stat-value">
+                    {% if ultima_prediccion %}
+                        {{ ultima_prediccion.riesgo_maximo.0|floatformat:0 }}%
+                    {% else %}—{% endif %}
+                </div>
+                <div class="stat-label">Riesgo máximo actual</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="{% url 'alertas:lista' %}" class="stat-card">
+            <div class="stat-icon {% if alertas_no_leidas > 0 %}red{% else %}green{% endif %}">
+                <i class="bi bi-bell"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ alertas_no_leidas }}</div>
+                <div class="stat-label">Alertas sin leer</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="{% url 'pacientes:perfil' %}" class="stat-card">
+            <div class="stat-icon teal"><i class="bi bi-person-check"></i></div>
+            <div>
+                <div class="stat-value" style="font-size:18px;">
+                    {% if ultimo_registro %}{{ ultimo_registro.imc|floatformat:1 }}{% else %}—{% endif %}
+                </div>
+                <div class="stat-label">IMC último registro</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Last clinical record -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header-custom">
+                <span class="card-title-custom"><i class="bi bi-activity"></i>Último registro clínico</span>
+                {% if ultimo_registro %}
+                <a href="{% url 'clinico:detalle' ultimo_registro.pk %}" class="btn btn-sm btn-outline-primary">
+                    Ver detalle
+                </a>
+                {% endif %}
+            </div>
+            <div class="p-4">
+                {% if ultimo_registro %}
+                <div class="data-grid">
+                    <div class="data-item">
+                        <div class="data-item-value">{{ ultimo_registro.glucosa }}</div>
+                        <div class="data-item-unit">mg/dL</div>
+                        <div class="data-item-label">Glucosa</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-value" style="font-size:16px;">
+                            {{ ultimo_registro.presion_sistolica }}/{{ ultimo_registro.presion_diastolica }}
+                        </div>
+                        <div class="data-item-unit">mmHg</div>
+                        <div class="data-item-label">Presión arterial</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-value">{{ ultimo_registro.imc|floatformat:1 }}</div>
+                        <div class="data-item-unit">kg/m²</div>
+                        <div class="data-item-label">IMC · {{ ultimo_registro.clasificacion_imc }}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-value">{{ ultimo_registro.frecuencia_cardiaca }}</div>
+                        <div class="data-item-unit">lpm</div>
+                        <div class="data-item-label">Frec. cardíaca</div>
+                    </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                    {% if not ultimo_registro.predicciones.exists %}
+                    <a href="{% url 'prediccion:nueva' ultimo_registro.pk %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-graph-up-arrow me-1"></i>Analizar riesgo
+                    </a>
+                    {% else %}
+                    <a href="{% url 'prediccion:resultado' ultimo_registro.predicciones.first.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i>Ver predicción
+                    </a>
+                    {% endif %}
+                    <span class="text-muted-sm align-self-center">
+                        {{ ultimo_registro.fecha_registro|date:"d/m/Y H:i" }}
+                    </span>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-clipboard2-plus"></i>
+                    <p>Sin registros clínicos aún</p>
+                    <a href="{% url 'clinico:nuevo_registro' %}" class="btn btn-primary mt-2">
+                        <i class="bi bi-plus-lg me-1"></i>Ingresar mis datos
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Last prediction -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header-custom">
+                <span class="card-title-custom"><i class="bi bi-graph-up-arrow"></i>Última predicción de riesgo</span>
+                {% if ultima_prediccion %}
+                <a href="{% url 'prediccion:resultado' ultima_prediccion.pk %}" class="btn btn-sm btn-outline-primary">
+                    Ver completo
+                </a>
+                {% endif %}
+            </div>
+            <div class="p-4">
+                {% if ultima_prediccion %}
+                <div class="mb-3">
+                    {% with p=ultima_prediccion %}
+                    {% for nombre, riesgo, nivel, color in enfermedades_list %}
+                    {% endfor %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size:13px;">Diabetes</span>
+                        <span class="badge-nivel {{ ultima_prediccion.nivel_diabetes }}">{{ ultima_prediccion.nivel_diabetes }}</span>
+                        <span style="font-size:13px;font-weight:600;width:48px;text-align:right;">{{ ultima_prediccion.riesgo_diabetes }}%</span>
+                    </div>
+                    <div class="risk-bar-wrap mb-3"><div class="risk-bar {{ ultima_prediccion.nivel_diabetes }}" style="width:{{ ultima_prediccion.riesgo_diabetes }}%"></div></div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size:13px;">Hipertensión</span>
+                        <span class="badge-nivel {{ ultima_prediccion.nivel_hipertension }}">{{ ultima_prediccion.nivel_hipertension }}</span>
+                        <span style="font-size:13px;font-weight:600;width:48px;text-align:right;">{{ ultima_prediccion.riesgo_hipertension }}%</span>
+                    </div>
+                    <div class="risk-bar-wrap mb-3"><div class="risk-bar {{ ultima_prediccion.nivel_hipertension }}" style="width:{{ ultima_prediccion.riesgo_hipertension }}%"></div></div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size:13px;">Cardíaco</span>
+                        <span class="badge-nivel {{ ultima_prediccion.nivel_cardiaco }}">{{ ultima_prediccion.nivel_cardiaco }}</span>
+                        <span style="font-size:13px;font-weight:600;width:48px;text-align:right;">{{ ultima_prediccion.riesgo_cardiaco }}%</span>
+                    </div>
+                    <div class="risk-bar-wrap"><div class="risk-bar {{ ultima_prediccion.nivel_cardiaco }}" style="width:{{ ultima_prediccion.riesgo_cardiaco }}%"></div></div>
+                    {% endwith %}
+                </div>
+                <p class="text-muted-sm">{{ ultima_prediccion.fecha_prediccion|date:"d/m/Y H:i" }} · {{ ultima_prediccion.modelo_version }}</p>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <p>Sin predicciones aún</p>
+                    {% if ultimo_registro %}
+                    <a href="{% url 'prediccion:nueva' ultimo_registro.pk %}" class="btn btn-primary mt-2">
+                        <i class="bi bi-play-circle me-1"></i>Analizar ahora
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick actions -->
+<div class="mt-4">
+    <p class="section-title">Acciones rápidas</p>
+    <div class="row g-3">
+        <div class="col-6 col-md-3">
+            <a href="{% url 'clinico:nuevo_registro' %}" class="quick-action">
+                <i class="bi bi-plus-circle-fill text-primary"></i>
+                <span>Nuevo registro</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'clinico:historial' %}" class="quick-action">
+                <i class="bi bi-clock-history" style="color:#7c3aed;"></i>
+                <span>Ver historial</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'reportes:csv_clinico' %}" class="quick-action">
+                <i class="bi bi-download" style="color:#059669;"></i>
+                <span>Exportar CSV</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'pacientes:perfil' %}" class="quick-action">
+                <i class="bi bi-person-gear" style="color:#d35400;"></i>
+                <span>Mi perfil</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Disclaimer -->
+<div class="mt-4 p-3 rounded" style="background:#fff3cd;border-left:4px solid #f59e0b;font-size:12.5px;color:#92400e;">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>Aviso importante:</strong> Los resultados son estimaciones estadísticas basadas en parámetros clínicos.
+    No reemplazan el criterio ni el diagnóstico de un profesional de la salud.
+</div>
+{% endif %}
+
+{% endblock %}

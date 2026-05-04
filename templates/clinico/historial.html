@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Historial Clínico{% endblock %}
+{% block page_title %}Historial Clínico{% endblock %}
+{% block nav_historial %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+.filter-bar {
+    background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+    padding:14px 18px;margin-bottom:20px;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.status-dot {
+    width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;
+}
+.status-dot.normal { background:#16a34a; }
+.status-dot.warning { background:#d97706; }
+.status-dot.danger  { background:#dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0" style="font-size:13px;">
+            <li class="breadcrumb-item"><a href="{% url 'usuarios:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Historial Clínico</li>
+        </ol>
+    </nav>
+    <div class="d-flex gap-2">
+        <a href="{% url 'reportes:csv_clinico' %}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-download me-1"></i>Exportar CSV
+        </a>
+        <a href="{% url 'clinico:nuevo_registro' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>Nuevo registro
+        </a>
+    </div>
+</div>
+
+{% if registros %}
+<!-- Stats summary -->
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="bi bi-clipboard2-pulse"></i></div>
+            <div><div class="stat-value">{{ registros.count }}</div><div class="stat-label">Total registros</div></div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="bi bi-droplet"></i></div>
+            <div>
+                <div class="stat-value" style="font-size:20px;">{{ registros.0.glucosa }}</div>
+                <div class="stat-label">Glucosa más reciente (mg/dL)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon orange"><i class="bi bi-heart-pulse"></i></div>
+            <div>
+                <div class="stat-value" style="font-size:18px;">{{ registros.0.presion_sistolica }}/{{ registros.0.presion_diastolica }}</div>
+                <div class="stat-label">Presión más reciente</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="bi bi-speedometer2"></i></div>
+            <div>
+                <div class="stat-value" style="font-size:20px;">{{ registros.0.imc|floatformat:1 }}</div>
+                <div class="stat-label">IMC más reciente</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card">
+    <div class="card-header-custom">
+        <span class="card-title-custom"><i class="bi bi-table"></i>Todos los registros</span>
+        <small class="text-muted">{{ registros.count }} registros</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Fecha</th>
+                    <th>Glucosa</th>
+                    <th>Presión Arterial</th>
+                    <th>IMC</th>
+                    <th>Frec. Cardíaca</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                {% with g_cls=r.clasificacion_glucosa p_cls=r.clasificacion_presion %}
+                <tr>
+                    <td class="text-muted-sm">{{ forloop.counter }}</td>
+                    <td>
+                        <div style="font-weight:500;">{{ r.fecha_registro|date:"d/m/Y" }}</div>
+                        <div class="text-muted-sm">{{ r.fecha_registro|date:"H:i" }}</div>
+                    </td>
+                    <td>
+                        <span class="status-dot {{ g_cls.1 }}"></span>
+                        <strong>{{ r.glucosa }}</strong> mg/dL
+                        <div class="text-muted-sm">{{ g_cls.0 }}</div>
+                    </td>
+                    <td>
+                        <span class="status-dot {{ p_cls.1 }}"></span>
+                        <strong>{{ r.presion_sistolica }}/{{ r.presion_diastolica }}</strong> mmHg
+                        <div class="text-muted-sm">{{ p_cls.0 }}</div>
+                    </td>
+                    <td>
+                        <strong>{{ r.imc|floatformat:1 }}</strong>
+                        <div class="text-muted-sm">{{ r.clasificacion_imc }}</div>
+                    </td>
+                    <td>{{ r.frecuencia_cardiaca }} lpm</td>
+                    <td>
+                        {% if r.predicciones.exists %}
+                        <span class="badge-nivel {{ r.predicciones.first.nivel_general }}">
+                            Riesgo {{ r.predicciones.first.nivel_general }}
+                        </span>
+                        {% else %}
+                        <span style="font-size:11.5px;color:#94a3b8;">Sin análisis</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'clinico:detalle' r.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if not r.predicciones.exists %}
+                            <a href="{% url 'prediccion:nueva' r.pk %}" class="btn btn-sm btn-outline-success" title="Analizar riesgo">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </a>
+                            {% else %}
+                            <a href="{% url 'prediccion:resultado' r.predicciones.first.pk %}" class="btn btn-sm btn-outline-secondary" title="Ver predicción">
+                                <i class="bi bi-bar-chart"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endwith %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% else %}
+<div class="card">
+    <div class="p-5 empty-state">
+        <i class="bi bi-clipboard2-plus"></i>
+        <p>Aún no tienes registros clínicos.</p>
+        <a href="{% url 'clinico:nuevo_registro' %}" class="btn btn-primary mt-2">
+            <i class="bi bi-plus-lg me-1"></i>Ingresar mis primeros datos
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
