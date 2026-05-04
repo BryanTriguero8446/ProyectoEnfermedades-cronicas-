@@ -11,9 +11,8 @@
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="{% if user.is_authenticated %}app-layout{% else %}auth-layout{% endif %}">
+<body class="app-layout">
 
-{% if user.is_authenticated %}
 <!-- ===== SIDEBAR ===== -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
@@ -24,7 +23,7 @@
     <nav class="sidebar-nav">
         <div class="nav-section-label">Principal</div>
         <a href="{% url 'usuarios:dashboard' %}" class="nav-link-item {% block nav_dashboard %}{% endblock %}">
-            <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+            <i class="bi bi-speedometer2"></i><span>Principal</span>
         </a>
         <a href="{% url 'clinico:nuevo_registro' %}" class="nav-link-item {% block nav_nuevo %}{% endblock %}">
             <i class="bi bi-plus-circle"></i><span>Nuevo Registro</span>
@@ -98,13 +97,6 @@
         {% block content %}{% endblock %}
     </main>
 </div>
-
-{% else %}
-<!-- ===== AUTH LAYOUT ===== -->
-<div class="auth-container">
-    {% block content %}{% endblock %}
-</div>
-{% endif %}
 
 <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'js/main.js' %}"></script>
