@@ -52,6 +52,9 @@ Thumbs.db
 # ===== ML MODELS =====
 *.pkl
 *.joblib
+# Si los modelos de produccion deben versionarse
+!prediccion/ml_models/*.pkl
+!prediccion/ml_models/*.joblib
 
 # ===== SECRETS =====
 secrets.json
