@@ -46,7 +46,7 @@
 <div class="welcome-banner">
     <div class="welcome-text">
         <h2>Panel de Administración</h2>
-        <p>Gestiona y monitorea el sistema ClinicalLens</p>
+        <p>Gestiona y monitorea el sistema Clínica Predictiva</p>
     </div>
     <a href="/admin/" class="btn btn-light btn-sm">
         <i class="bi bi-gear me-1"></i>Django Admin
@@ -261,9 +261,6 @@
             <div class="p-4">
                 {% if ultima_prediccion %}
                 <div class="mb-3">
-                    {% with p=ultima_prediccion %}
-                    {% for nombre, riesgo, nivel, color in enfermedades_list %}
-                    {% endfor %}
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span style="font-size:13px;">Diabetes</span>
                         <span class="badge-nivel {{ ultima_prediccion.nivel_diabetes }}">{{ ultima_prediccion.nivel_diabetes }}</span>
@@ -284,7 +281,6 @@
                         <span style="font-size:13px;font-weight:600;width:48px;text-align:right;">{{ ultima_prediccion.riesgo_cardiaco }}%</span>
                     </div>
                     <div class="risk-bar-wrap"><div class="risk-bar {{ ultima_prediccion.nivel_cardiaco }}" style="width:{{ ultima_prediccion.riesgo_cardiaco }}%"></div></div>
-                    {% endwith %}
                 </div>
                 <p class="text-muted-sm">{{ ultima_prediccion.fecha_prediccion|date:"d/m/Y H:i" }} · {{ ultima_prediccion.modelo_version }}</p>
                 {% else %}
