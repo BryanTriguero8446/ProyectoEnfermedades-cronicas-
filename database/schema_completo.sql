@@ -1,9 +1,3 @@
--- =============================================================
--- ClinicalLens — Schema completo de base de datos
--- Diseñado por: Ingeniero de datos
--- Motor: MySQL 8.0+  |  Charset: utf8mb4
--- =============================================================
-
 SET FOREIGN_KEY_CHECKS = 0;
 SET sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ENGINE_SUBSTITUTION';
 
