@@ -35,7 +35,9 @@
     color: #64748b;
     font-weight: 500;
 }
-.range-hint { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+.range-hint { font-size: 11px; color: #5A84AD; margin-top: 3px; }
+.section-card-header i { color: #1E90FF; font-size: 18px; }
+.unit-label { background:#EAF4FF; border:1.5px solid #C5DFFF; border-left:none; border-radius:0 8px 8px 0; padding:8px 12px; font-size:12px; color:#5A84AD; font-weight:500; }
 .imc-preview {
     background: linear-gradient(135deg, #e8f0fe, #dbeafe);
     border-radius: 10px;
@@ -80,27 +82,31 @@
                         <label class="form-label">Edad <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="edad" id="edad"
-                                   min="1" max="120" placeholder="35" required>
+                                   min="1" max="120" placeholder="35" required oninput="validar(this,'edad')">
                             <span class="unit-label">años</span>
                         </div>
-                        <div class="range-hint">1 – 120 años</div>
+                        <div class="range-hint">Rango válido: 1 – 120 años</div>
+                        <div class="range-feedback" id="fb-edad"></div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Peso <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="peso" id="peso"
-                                   min="1" max="300" step="0.1" placeholder="70.0" required oninput="calcIMC()">
+                                   min="1" max="300" step="0.1" placeholder="70.0" required oninput="calcIMC();validar(this,'peso')">
                             <span class="unit-label">kg</span>
                         </div>
+                        <div class="range-hint">Rango válido: 1 – 300 kg</div>
+                        <div class="range-feedback" id="fb-peso"></div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Altura <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="altura" id="altura"
-                                   min="0.5" max="2.5" step="0.01" placeholder="1.70" required oninput="calcIMC()">
+                                   min="0.5" max="2.5" step="0.01" placeholder="1.70" required oninput="calcIMC();validar(this,'altura')">
                             <span class="unit-label">m</span>
                         </div>
-                        <div class="range-hint">Ej: 1.70 m</div>
+                        <div class="range-hint">Rango válido: 0.50 – 2.50 m</div>
+                        <div class="range-feedback" id="fb-altura"></div>
                     </div>
                 </div>
             </div>
@@ -116,38 +122,42 @@
                     <div class="col-md-3">
                         <label class="form-label">Presión Sistólica <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="number" class="form-control" name="presion_sistolica"
-                                   min="50" max="300" placeholder="120" required>
+                            <input type="number" class="form-control" name="presion_sistolica" id="presion_sistolica"
+                                   min="50" max="300" placeholder="120" required oninput="validar(this,'presion_sistolica')">
                             <span class="unit-label">mmHg</span>
                         </div>
                         <div class="range-hint">Normal: &lt;120</div>
+                        <div class="range-feedback" id="fb-presion_sistolica"></div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Presión Diastólica <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="number" class="form-control" name="presion_diastolica"
-                                   min="30" max="200" placeholder="80" required>
+                            <input type="number" class="form-control" name="presion_diastolica" id="presion_diastolica"
+                                   min="30" max="200" placeholder="80" required oninput="validar(this,'presion_diastolica')">
                             <span class="unit-label">mmHg</span>
                         </div>
                         <div class="range-hint">Normal: &lt;80</div>
+                        <div class="range-feedback" id="fb-presion_diastolica"></div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Glucosa <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="number" class="form-control" name="glucosa"
-                                   min="10" max="600" step="0.1" placeholder="90" required>
+                            <input type="number" class="form-control" name="glucosa" id="glucosa"
+                                   min="10" max="600" step="0.1" placeholder="90" required oninput="validar(this,'glucosa')">
                             <span class="unit-label">mg/dL</span>
                         </div>
                         <div class="range-hint">Normal: 70–100</div>
+                        <div class="range-feedback" id="fb-glucosa"></div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Frec. Cardíaca <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="number" class="form-control" name="frecuencia_cardiaca"
-                                   min="30" max="300" placeholder="72" required>
+                            <input type="number" class="form-control" name="frecuencia_cardiaca" id="frecuencia_cardiaca"
+                                   min="30" max="300" placeholder="72" required oninput="validar(this,'frecuencia_cardiaca')">
                             <span class="unit-label">lpm</span>
                         </div>
                         <div class="range-hint">Normal: 60–100</div>
+                        <div class="range-feedback" id="fb-frecuencia_cardiaca"></div>
                     </div>
                 </div>
             </div>
@@ -163,29 +173,32 @@
                     <div class="col-md-4">
                         <label class="form-label">Colesterol Total</label>
                         <div class="input-group">
-                            <input type="number" class="form-control" name="colesterol"
-                                   min="50" max="600" step="0.1" placeholder="180">
+                            <input type="number" class="form-control" name="colesterol" id="colesterol"
+                                   min="50" max="600" step="0.1" placeholder="180" oninput="validar(this,'colesterol')">
                             <span class="unit-label">mg/dL</span>
                         </div>
                         <div class="range-hint">Deseable: &lt;200</div>
+                        <div class="range-feedback" id="fb-colesterol"></div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Triglicéridos</label>
                         <div class="input-group">
-                            <input type="number" class="form-control" name="trigliceridos"
-                                   min="20" max="2000" step="0.1" placeholder="150">
+                            <input type="number" class="form-control" name="trigliceridos" id="trigliceridos"
+                                   min="20" max="2000" step="0.1" placeholder="150" oninput="validar(this,'trigliceridos')">
                             <span class="unit-label">mg/dL</span>
                         </div>
                         <div class="range-hint">Normal: &lt;150</div>
+                        <div class="range-feedback" id="fb-trigliceridos"></div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Creatinina</label>
                         <div class="input-group">
-                            <input type="number" class="form-control" name="creatinina"
-                                   min="0.1" max="20" step="0.01" placeholder="1.0">
+                            <input type="number" class="form-control" name="creatinina" id="creatinina"
+                                   min="0.1" max="20" step="0.01" placeholder="1.0" oninput="validar(this,'creatinina')">
                             <span class="unit-label">mg/dL</span>
                         </div>
                         <div class="range-hint">Normal: 0.6–1.2</div>
+                        <div class="range-feedback" id="fb-creatinina"></div>
                     </div>
                 </div>
             </div>
@@ -304,10 +317,46 @@
 
 {% block extra_js %}
 <script>
+const RANGOS = {
+    edad:               { min:1,   max:120,  warnLo:null, warnHi:null,  msgErr:'Valor fuera de rango (1–120 años)' },
+    peso:               { min:1,   max:300,  warnLo:null, warnHi:null,  msgErr:'Valor fuera de rango (1–300 kg)' },
+    altura:             { min:0.5, max:2.5,  warnLo:null, warnHi:null,  msgErr:'Valor fuera de rango (0.50–2.50 m)' },
+    presion_sistolica:  { min:50,  max:300,  warnLo:null, warnHi:120,   msgErr:'Fuera de rango (50–300 mmHg)',  msgWarn:'Presión elevada — normal <120 mmHg' },
+    presion_diastolica: { min:30,  max:200,  warnLo:null, warnHi:80,    msgErr:'Fuera de rango (30–200 mmHg)',  msgWarn:'Presión elevada — normal <80 mmHg' },
+    glucosa:            { min:10,  max:600,  warnLo:70,   warnHi:100,   msgErr:'Fuera de rango (10–600 mg/dL)', msgWarn:'Fuera del rango normal (70–100 mg/dL)' },
+    frecuencia_cardiaca:{ min:30,  max:300,  warnLo:60,   warnHi:100,   msgErr:'Fuera de rango (30–300 lpm)',   msgWarn:'Fuera del rango normal (60–100 lpm)' },
+    colesterol:         { min:50,  max:600,  warnLo:null, warnHi:200,   msgErr:'Fuera de rango (50–600 mg/dL)', msgWarn:'Elevado — deseable <200 mg/dL' },
+    trigliceridos:      { min:20,  max:2000, warnLo:null, warnHi:150,   msgErr:'Fuera de rango (20–2000 mg/dL)',msgWarn:'Elevado — normal <150 mg/dL' },
+    creatinina:         { min:0.1, max:20,   warnLo:0.6,  warnHi:1.2,   msgErr:'Fuera de rango (0.1–20 mg/dL)', msgWarn:'Fuera del rango normal (0.6–1.2 mg/dL)' },
+};
+
+function validar(input, campo) {
+    const r = RANGOS[campo];
+    if (!r) return;
+    const val = parseFloat(input.value);
+    const fb  = document.getElementById('fb-' + campo);
+
+    input.classList.remove('rango-ok', 'rango-warn', 'rango-error');
+    if (fb) fb.className = 'range-feedback';
+
+    if (input.value === '' || isNaN(val)) return;
+
+    if (val < r.min || val > r.max) {
+        input.classList.add('rango-error');
+        if (fb) { fb.textContent = '✕ ' + r.msgErr; fb.classList.add('show', 'err'); }
+    } else if ((r.warnLo !== null && val < r.warnLo) || (r.warnHi !== null && val > r.warnHi)) {
+        input.classList.add('rango-warn');
+        if (fb) { fb.textContent = '⚠ ' + r.msgWarn; fb.classList.add('show', 'warn'); }
+    } else {
+        input.classList.add('rango-ok');
+        if (fb) { fb.textContent = '✓ Valor dentro del rango normal'; fb.classList.add('show', 'ok'); }
+    }
+}
+
 function calcIMC() {
-    const peso = parseFloat(document.getElementById('peso').value);
+    const peso   = parseFloat(document.getElementById('peso').value);
     const altura = parseFloat(document.getElementById('altura').value);
-    const disp = document.getElementById('imc-display');
+    const disp   = document.getElementById('imc-display');
     const clasif = document.getElementById('imc-clasif');
 
     if (peso > 0 && altura > 0) {
@@ -315,18 +364,18 @@ function calcIMC() {
         disp.textContent = imc.toFixed(1);
 
         let cat, color;
-        if (imc < 18.5)      { cat = 'Bajo peso';   color = '#3b82f6'; }
-        else if (imc < 25)   { cat = '✓ Normal';     color = '#16a34a'; }
-        else if (imc < 30)   { cat = 'Sobrepeso';    color = '#d97706'; }
-        else if (imc < 35)   { cat = 'Obesidad I';   color = '#dc2626'; }
-        else if (imc < 40)   { cat = 'Obesidad II';  color = '#dc2626'; }
-        else                  { cat = 'Obesidad III'; color = '#7f1d1d'; }
+        if      (imc < 18.5) { cat = 'Bajo peso';   color = '#3b82f6'; }
+        else if (imc < 25)   { cat = '✓ Normal';     color = '#1a8a4a'; }
+        else if (imc < 30)   { cat = 'Sobrepeso';    color = '#c47a00'; }
+        else if (imc < 35)   { cat = 'Obesidad I';   color = '#D63031'; }
+        else if (imc < 40)   { cat = 'Obesidad II';  color = '#D63031'; }
+        else                 { cat = 'Obesidad III';  color = '#7f1d1d'; }
 
         disp.style.color = color;
         clasif.textContent = cat;
     } else {
         disp.textContent = '—';
-        disp.style.color = '#1a73e8';
+        disp.style.color = '#1E90FF';
         clasif.textContent = 'Ingresa peso y altura';
     }
 }
