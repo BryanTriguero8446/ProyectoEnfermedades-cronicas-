@@ -206,7 +206,7 @@ def _predecir_con_reglas(datos):
 
     # Cardiaco
     c_score = 0.0
-    if fc > 100 or fc < 50: c_score += 15
+    if fc > 100 or fc < 60: c_score += 15
     c_score += riesgo_hipertension * 0.3
     c_score += riesgo_diabetes * 0.2
     c_score += riesgo_renal * 0.15

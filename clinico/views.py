@@ -1,3 +1,4 @@
+from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -15,11 +16,11 @@ def nuevo_registro(request):
             datos = DatosClinico(
                 paciente=request.user,
                 edad=int(request.POST.get('edad')),
-                peso=float(request.POST.get('peso')),
-                altura=float(request.POST.get('altura')),
+                peso=Decimal(request.POST.get('peso')),
+                altura=Decimal(request.POST.get('altura')),
                 presion_sistolica=int(request.POST.get('presion_sistolica')),
                 presion_diastolica=int(request.POST.get('presion_diastolica')),
-                glucosa=float(request.POST.get('glucosa')),
+                glucosa=Decimal(request.POST.get('glucosa')),
                 frecuencia_cardiaca=int(request.POST.get('frecuencia_cardiaca')),
                 actividad_fisica=request.POST.get('actividad_fisica', 'sedentario'),
                 fumador=request.POST.get('fumador') == 'on',
@@ -30,12 +31,13 @@ def nuevo_registro(request):
             tri = request.POST.get('trigliceridos', '').strip()
             cre = request.POST.get('creatinina', '').strip()
             if col:
-                datos.colesterol = float(col)
+                datos.colesterol = Decimal(col)
             if tri:
-                datos.trigliceridos = float(tri)
+                datos.trigliceridos = Decimal(tri)
             if cre:
-                datos.creatinina = float(cre)
+                datos.creatinina = Decimal(cre)
 
+            datos.full_clean()
             datos.save()
 
             # Generar alertas automáticas
@@ -52,8 +54,15 @@ def nuevo_registro(request):
 
             messages.success(request, 'Datos clínicos registrados correctamente.')
             return redirect('clinico:detalle', pk=datos.pk)
-        except (ValueError, TypeError) as e:
-            messages.error(request, f'Error en los datos ingresados: {e}')
+        except Exception as e:
+            from django.core.exceptions import ValidationError
+            if isinstance(e, ValidationError):
+                msgs = '; '.join(
+                    f"{f}: {', '.join(errs)}" for f, errs in e.message_dict.items()
+                ) if hasattr(e, 'message_dict') else str(e)
+                messages.error(request, f'Datos fuera de rango: {msgs}')
+            else:
+                messages.error(request, f'Error en los datos ingresados: {e}')
 
     return render(request, 'clinico/nuevo_registro.html')
 

@@ -88,7 +88,7 @@ def logout_view(request):
         pass
     
     logout(request)
-    return redirect('usuarios:index')
+    return redirect('usuarios:login')
 
 
 def registro_view(request):
