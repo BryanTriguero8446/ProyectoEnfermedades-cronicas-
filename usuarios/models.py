@@ -31,6 +31,9 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     intentos_fallidos = models.IntegerField(default=0)
     bloqueado = models.BooleanField(default=False)
+    email_verificado = models.BooleanField(default=False)
+    codigo_verificacion = models.CharField(max_length=6, blank=True, default='')
+    codigo_verificacion_expira = models.DateTimeField(null=True, blank=True)
 
     USERNAME_FIELD = 'correo'
     REQUIRED_FIELDS = ['nombre', 'apellido']

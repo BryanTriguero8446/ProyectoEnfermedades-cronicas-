@@ -1,0 +1,32 @@
+{% extends 'base_auth.html' %}
+{% block title %}Enlace inválido{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="auth-card-header">
+        <div class="auth-brand-icon">
+            <i class="bi bi-heart-pulse-fill"></i>
+        </div>
+        <div class="auth-title">Enlace inválido</div>
+        <div class="auth-subtitle">No se pudo verificar la cuenta</div>
+    </div>
+    <div class="auth-body text-center">
+        <div class="mb-3" style="font-size:56px;color:#ef4444;">
+            <i class="bi bi-x-circle-fill"></i>
+        </div>
+        <p class="mb-2" style="font-size:15px;font-weight:600;">
+            El enlace ha expirado o no es válido
+        </p>
+        <p class="text-muted" style="font-size:13px;">
+            Los enlaces de verificación son válidos por 24 horas. Puedes solicitar uno nuevo iniciando sesión con tu cuenta.
+        </p>
+
+        <a href="{% url 'usuarios:login' %}" class="btn btn-primary w-100 mt-3 mb-2">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Ir al inicio de sesión
+        </a>
+        <a href="{% url 'usuarios:registro' %}" class="btn btn-outline-secondary w-100">
+            <i class="bi bi-person-plus me-2"></i>Crear nueva cuenta
+        </a>
+    </div>
+</div>
+{% endblock %}

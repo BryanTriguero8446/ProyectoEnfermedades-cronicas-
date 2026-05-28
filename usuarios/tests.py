@@ -4,15 +4,21 @@ from usuarios.models import Usuario
 
 
 def crear_paciente(correo='test@test.com', password='Pass1234!'):
-    return Usuario.objects.create_user(
+    u = Usuario.objects.create_user(
         correo=correo, nombre='Ana', apellido='López', password=password
     )
+    u.email_verificado = True
+    u.save(update_fields=['email_verificado'])
+    return u
 
 
 def crear_admin(correo='admin@test.com', password='Admin1234!'):
-    return Usuario.objects.create_superuser(
+    u = Usuario.objects.create_superuser(
         correo=correo, nombre='Carlos', apellido='Admin', password=password
     )
+    u.email_verificado = True
+    u.save(update_fields=['email_verificado'])
+    return u
 
 
 # ─────────────────────────────────────────────

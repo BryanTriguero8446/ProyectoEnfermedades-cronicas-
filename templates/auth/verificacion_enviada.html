@@ -1,0 +1,136 @@
+{% extends 'base_auth.html' %}
+{% block title %}Verificar cuenta{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="auth-card-header">
+        <div class="auth-brand-icon">
+            <i class="bi bi-envelope-check-fill"></i>
+        </div>
+        <div class="auth-title">Verifica tu cuenta</div>
+        <div class="auth-subtitle">Ingresa el código que enviamos a tu correo</div>
+    </div>
+    <div class="auth-body">
+
+        <div class="text-center mb-3">
+            <div style="font-size:13px;color:#64748b;">Código enviado a:</div>
+            <div style="font-weight:700;font-size:15px;color:#0369a1;word-break:break-all;">
+                <i class="bi bi-envelope me-1"></i>{{ correo }}
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>{{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" id="formCodigo" novalidate>
+            {% csrf_token %}
+            <!-- Cajas OTP -->
+            <div class="d-flex justify-content-center gap-2 mb-4">
+                <input type="text" class="otp-box" maxlength="1" inputmode="text" autocomplete="off" id="c1">
+                <input type="text" class="otp-box" maxlength="1" inputmode="text" autocomplete="off" id="c2">
+                <input type="text" class="otp-box" maxlength="1" inputmode="text" autocomplete="off" id="c3">
+                <input type="text" class="otp-box" maxlength="1" inputmode="text" autocomplete="off" id="c4">
+                <input type="text" class="otp-box" maxlength="1" inputmode="text" autocomplete="off" id="c5">
+                <input type="text" class="otp-box" maxlength="1" inputmode="text" autocomplete="off" id="c6">
+            </div>
+            <!-- Campo oculto que se envía al servidor -->
+            <input type="hidden" name="codigo" id="codigoHidden">
+
+            <button type="submit" class="btn btn-primary w-100 btn-lg" id="btnVerificar" disabled>
+                <i class="bi bi-check-circle me-2"></i>Verificar código
+            </button>
+        </form>
+
+        <hr class="divider mt-4">
+
+        <p class="text-center mb-2" style="font-size:13px;color:#64748b;">
+            ¿No recibiste el código?
+        </p>
+        <form method="post" action="{% url 'usuarios:reenviar_verificacion' %}">
+            {% csrf_token %}
+            <input type="hidden" name="correo" value="{{ correo }}">
+            <button type="submit" class="btn btn-outline-secondary w-100">
+                <i class="bi bi-arrow-clockwise me-2"></i>Reenviar código
+            </button>
+        </form>
+
+        <div class="text-center mt-3">
+            <a href="{% url 'usuarios:login' %}" style="font-size:12px;color:#94a3b8;">
+                Volver al inicio de sesión
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.otp-box {
+    width: 48px;
+    height: 56px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    border: 2px solid #cbd5e1;
+    border-radius: 10px;
+    outline: none;
+    text-transform: uppercase;
+    transition: border-color .15s;
+    color: #1e293b;
+}
+.otp-box:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,.2);
+}
+.otp-box.filled {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+</style>
+
+<script>
+const boxes = document.querySelectorAll('.otp-box');
+const hidden = document.getElementById('codigoHidden');
+const btn    = document.getElementById('btnVerificar');
+
+function updateHidden() {
+    let val = '';
+    boxes.forEach(b => val += b.value);
+    hidden.value = val;
+    btn.disabled = val.length < 6;
+    boxes.forEach(b => b.classList.toggle('filled', b.value !== ''));
+}
+
+boxes.forEach((box, i) => {
+    box.addEventListener('input', function() {
+        this.value = this.value.replace(/[^a-zA-Z0-9]/, '').toUpperCase().slice(-1);
+        updateHidden();
+        if (this.value && i < boxes.length - 1) boxes[i + 1].focus();
+    });
+
+    box.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !this.value && i > 0) {
+            boxes[i - 1].focus();
+        }
+    });
+
+    box.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData)
+            .getData('text').replace(/\s/g, '').toUpperCase().slice(0, 6);
+        boxes.forEach((b, j) => { b.value = text[j] || ''; });
+        updateHidden();
+        const next = Math.min(text.length, boxes.length - 1);
+        boxes[next].focus();
+    });
+});
+
+boxes[0].focus();
+
+document.getElementById('formCodigo').addEventListener('submit', function() {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verificando...';
+});
+</script>
+{% endblock %}

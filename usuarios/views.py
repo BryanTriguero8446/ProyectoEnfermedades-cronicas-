@@ -1,12 +1,59 @@
+import json
+import random
+import string
+from datetime import timedelta
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.core.mail import send_mail
+from django.conf import settings as django_settings
+from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Usuario
 from .serializers import UsuarioSerializer
 from .forms import RegistroForm
+
+
+def _generar_codigo():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+
+def _enviar_codigo_verificacion(user):
+    codigo = _generar_codigo()
+    user.codigo_verificacion = codigo
+    user.codigo_verificacion_expira = timezone.now() + timedelta(hours=24)
+    user.save(update_fields=['codigo_verificacion', 'codigo_verificacion_expira'])
+    send_mail(
+        subject='Tu código de verificación - ClinicalLens',
+        message=(
+            f"Hola {user.nombre},\n\n"
+            f"Tu código de verificación es:\n\n"
+            f"        {codigo}\n\n"
+            f"Ingresa este código en la aplicación para activar tu cuenta.\n"
+            f"El código es válido por 24 horas.\n\n"
+            f"Si no creaste esta cuenta, ignora este mensaje.\n\n"
+            f"— Equipo ClinicalLens"
+        ),
+        from_email=django_settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.correo],
+        fail_silently=False,
+    )
+
+
+def _crear_alerta_nuevo_usuario(new_user):
+    """Crea una alerta de tipo 'nuevo_usuario' visible para todos los admins."""
+    from alertas.models import Alerta
+    Alerta.objects.create(
+        paciente=new_user,
+        tipo='nuevo_usuario',
+        severidad='info',
+        mensaje=(
+            f"Nuevo usuario registrado: {new_user.nombre} {new_user.apellido} "
+            f"({new_user.correo})"
+        ),
+    )
 
 
 def get_client_ip(request):
@@ -33,16 +80,19 @@ def login_view(request):
     if request.method == 'POST':
         correo = request.POST.get('correo')
         password = request.POST.get('password')
-        
+
         try:
-            # Buscar usuario por correo
             usuario = Usuario.objects.get(correo=correo)
-            
-            # Verificar contraseña
+
             if usuario.check_password(password):
+                # Cuenta no verificada → bloquear y ofrecer reenvío
+                if not usuario.email_verificado:
+                    return render(request, 'auth/login.html', {
+                        'error_verificacion': True,
+                        'correo_pendiente': correo,
+                    })
+
                 login(request, usuario)
-                
-                # Registrar acceso exitoso
                 try:
                     from clinico.models import HistorialAccesos
                     HistorialAccesos.objects.create(
@@ -50,12 +100,10 @@ def login_view(request):
                         accion='login_ok',
                         ip=get_client_ip(request)
                     )
-                except:
+                except Exception:
                     pass
-                
                 return redirect('usuarios:dashboard')
             else:
-                # Contraseña incorrecta
                 try:
                     from clinico.models import HistorialAccesos
                     HistorialAccesos.objects.create(
@@ -63,15 +111,14 @@ def login_view(request):
                         accion='login_fail',
                         ip=get_client_ip(request)
                     )
-                except:
+                except Exception:
                     pass
-                
-                return render(request, 'auth/login.html', 
-                             {'error': 'Correo o contraseña incorrectos'})
+                return render(request, 'auth/login.html',
+                              {'error': 'Correo o contraseña incorrectos'})
         except Usuario.DoesNotExist:
             return render(request, 'auth/login.html',
-                         {'error': 'Correo o contraseña incorrectos'})
-    
+                          {'error': 'Correo o contraseña incorrectos'})
+
     return render(request, 'auth/login.html')
 
 
@@ -92,19 +139,80 @@ def logout_view(request):
 
 
 def registro_view(request):
-    """Registro de nuevo usuario."""
+    """Registro de nuevo usuario con verificación de correo."""
     if request.method == 'POST':
         form = RegistroForm(request.POST)
         if form.is_valid():
-            usuario = form.save()
-            login(request, usuario)
-            return redirect('usuarios:dashboard')
+            usuario = form.save(commit=False)
+            usuario.email_verificado = False   # pendiente de verificación
+            usuario.save()
+
+            # Guardar sexo en PerfilPaciente
+            sexo = form.cleaned_data.get('sexo', '')
+            if sexo:
+                from pacientes.models import PerfilPaciente
+                perfil, _ = PerfilPaciente.objects.get_or_create(usuario=usuario)
+                perfil.sexo = sexo
+                perfil.save()
+
+            # Crear alerta para administradores
+            _crear_alerta_nuevo_usuario(usuario)
+
+            # Enviar código de verificación
+            _enviar_codigo_verificacion(usuario)
+
+            request.session['correo_verificacion'] = usuario.correo
+            return redirect('usuarios:verificacion_enviada')
         else:
             return render(request, 'auth/registro.html', {'form': form})
     else:
         form = RegistroForm()
-    
+
     return render(request, 'auth/registro.html', {'form': form})
+
+
+def verificacion_enviada_view(request):
+    """Formulario de ingreso del código de verificación."""
+    correo = request.session.get('correo_verificacion')
+    if not correo:
+        return redirect('usuarios:login')
+
+    error = None
+    if request.method == 'POST':
+        codigo = request.POST.get('codigo', '').strip().upper()
+        try:
+            usuario = Usuario.objects.get(correo=correo, email_verificado=False)
+            ahora = timezone.now()
+            if (usuario.codigo_verificacion == codigo and
+                    usuario.codigo_verificacion_expira and
+                    ahora < usuario.codigo_verificacion_expira):
+                usuario.email_verificado = True
+                usuario.codigo_verificacion = ''
+                usuario.save(update_fields=['email_verificado', 'codigo_verificacion'])
+                request.session.pop('correo_verificacion', None)
+                return render(request, 'auth/verificacion_ok.html', {'usuario': usuario})
+            else:
+                error = 'Código incorrecto o expirado. Revisa tu correo e intenta de nuevo.'
+        except Usuario.DoesNotExist:
+            error = 'No se encontró la cuenta asociada a este correo.'
+
+    return render(request, 'auth/verificacion_enviada.html', {
+        'correo': correo,
+        'error': error,
+    })
+
+
+def reenviar_verificacion_view(request):
+    """Genera un nuevo código y lo reenvía al correo."""
+    if request.method == 'POST':
+        correo = request.POST.get('correo', '').strip()
+        try:
+            usuario = Usuario.objects.get(correo=correo, email_verificado=False)
+            _enviar_codigo_verificacion(usuario)
+            request.session['correo_verificacion'] = correo
+        except Usuario.DoesNotExist:
+            pass
+    return redirect('usuarios:verificacion_enviada')
 
 
 @login_required(login_url='usuarios:login')
@@ -143,6 +251,93 @@ def dashboard_view(request):
         })
 
     return render(request, 'dashboard/index.html', context)
+
+
+@login_required(login_url='usuarios:login')
+def estadisticas_view(request):
+    """Estadísticas de diagnósticos — solo administradores."""
+    if request.user.rol != 'administrador':
+        return redirect('usuarios:dashboard')
+
+    from prediccion.models import Prediccion
+
+    predicciones = Prediccion.objects.select_related(
+        'datos_clinicos', 'paciente'
+    ).prefetch_related('paciente__perfil').all()
+
+    ENFERMEDADES = [
+        ('diabetes',     'Diabetes Tipo 2',       '#EF4444'),
+        ('hipertension', 'Hipertensión Arterial',  '#F97316'),
+        ('renal',        'Enf. Renal Crónica',     '#8B5CF6'),
+        ('nafld',        'Hígado Graso (NAFLD)',   '#10B981'),
+        ('cardiaco',     'Insuf. Cardíaca',         '#DC2626'),
+    ]
+
+    def grupo_edad(edad):
+        if edad is None:
+            return None
+        if edad <= 12:  return 'Niño'
+        if edad <= 30:  return 'Joven'
+        if edad <= 60:  return 'Adulto'
+        return 'Viejo'
+
+    total = predicciones.count()
+
+    # ── Top enfermedades ─────────────────────────────────────────────────────
+    top_enf = []
+    for campo, label, color in ENFERMEDADES:
+        alto  = predicciones.filter(**{f'nivel_{campo}': 'alto'}).count()
+        medio = predicciones.filter(**{f'nivel_{campo}': 'medio'}).count()
+        bajo  = predicciones.filter(**{f'nivel_{campo}': 'bajo'}).count()
+        top_enf.append({
+            'campo': campo, 'label': label, 'color': color,
+            'alto': alto, 'medio': medio, 'bajo': bajo,
+        })
+    top_enf.sort(key=lambda x: x['alto'], reverse=True)
+
+    # ── Por sexo ─────────────────────────────────────────────────────────────
+    por_sexo = {
+        'M': {c: {'alto': 0, 'medio': 0, 'bajo': 0} for c, _, _ in ENFERMEDADES},
+        'F': {c: {'alto': 0, 'medio': 0, 'bajo': 0} for c, _, _ in ENFERMEDADES},
+        '?': {c: {'alto': 0, 'medio': 0, 'bajo': 0} for c, _, _ in ENFERMEDADES},
+    }
+    for p in predicciones:
+        try:
+            sexo = p.paciente.perfil.sexo or '?'
+            if sexo not in por_sexo:
+                sexo = '?'
+        except Exception:
+            sexo = '?'
+        for campo, _, _ in ENFERMEDADES:
+            nivel = getattr(p, f'nivel_{campo}', 'bajo')
+            por_sexo[sexo][campo][nivel] += 1
+
+    # ── Por grupo de edad ────────────────────────────────────────────────────
+    GRUPOS = ['Niño', 'Joven', 'Adulto', 'Viejo']
+    por_edad = {g: {c: {'alto': 0, 'medio': 0, 'bajo': 0} for c, _, _ in ENFERMEDADES}
+                for g in GRUPOS}
+    for p in predicciones:
+        edad  = p.datos_clinicos.edad if p.datos_clinicos else None
+        grupo = grupo_edad(edad)
+        if grupo is None:
+            continue
+        for campo, _, _ in ENFERMEDADES:
+            nivel = getattr(p, f'nivel_{campo}', 'bajo')
+            por_edad[grupo][campo][nivel] += 1
+
+    total_pacientes = predicciones.values('paciente').distinct().count()
+
+    context = {
+        'top_enf':          top_enf,
+        'top_enf_json':     json.dumps(top_enf),
+        'por_sexo_json':    json.dumps(por_sexo),
+        'por_edad_json':    json.dumps(por_edad),
+        'enfermedades':     ENFERMEDADES,
+        'grupos':           GRUPOS,
+        'total_predicciones': total,
+        'total_pacientes':  total_pacientes,
+    }
+    return render(request, 'admin/estadisticas.html', context)
 
 
 # ============= VISTAS API REST =============

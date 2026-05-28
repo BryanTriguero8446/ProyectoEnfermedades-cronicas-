@@ -1,0 +1,29 @@
+{% extends 'base_auth.html' %}
+{% block title %}Cuenta verificada{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="auth-card-header">
+        <div class="auth-brand-icon">
+            <i class="bi bi-heart-pulse-fill"></i>
+        </div>
+        <div class="auth-title">¡Cuenta verificada!</div>
+        <div class="auth-subtitle">Tu correo ha sido confirmado</div>
+    </div>
+    <div class="auth-body text-center">
+        <div class="mb-3" style="font-size:56px;color:#22c55e;">
+            <i class="bi bi-patch-check-fill"></i>
+        </div>
+        <p class="mb-2" style="font-size:15px;font-weight:600;">
+            ¡Bienvenido{% if usuario %}, {{ usuario.nombre }}{% endif %}!
+        </p>
+        <p class="text-muted" style="font-size:13px;">
+            Tu cuenta ha sido activada exitosamente. Ya puedes iniciar sesión y comenzar a monitorear tu salud.
+        </p>
+
+        <a href="{% url 'usuarios:login' %}" class="btn btn-primary w-100 mt-3">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión
+        </a>
+    </div>
+</div>
+{% endblock %}

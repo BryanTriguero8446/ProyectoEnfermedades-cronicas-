@@ -21,6 +21,21 @@
         </div>
         {% endif %}
 
+        {% if error_verificacion %}
+        <div class="alert alert-warning" role="alert">
+            <i class="bi bi-envelope-exclamation me-2"></i>
+            <strong>Cuenta sin verificar.</strong> Revisa tu correo y haz clic en el enlace de activación.
+            <hr class="my-2">
+            <form method="post" action="{% url 'usuarios:reenviar_verificacion' %}">
+                {% csrf_token %}
+                <input type="hidden" name="correo" value="{{ correo_pendiente }}">
+                <button type="submit" class="btn btn-sm btn-warning">
+                    <i class="bi bi-envelope-arrow-up me-1"></i>Reenviar correo de verificación
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
         <form method="post" novalidate>
             {% csrf_token %}
             <div class="mb-3">
