@@ -15,9 +15,10 @@ import numpy as np
 import joblib
 from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support, classification_report
+from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from sklearn.preprocessing import StandardScaler
+from sklearn.calibration import CalibratedClassifierCV
 
 BASE        = Path(__file__).parent
 DATASETS    = BASE / "ml_datasets"
@@ -36,15 +37,16 @@ DATASETS_CONFIG = {
 
 
 def entrenar_modelo(X_train, y_train, X_test, y_test, multiclase=False):
-    """Entrena Random Forest y Gradient Boosting, devuelve el mejor."""
+    """Entrena Random Forest y Gradient Boosting con calibración, devuelve el mejor."""
     candidatos = {
         "RandomForest": RandomForestClassifier(
-            n_estimators=200, max_depth=12, min_samples_split=5,
-            random_state=42, n_jobs=-1, class_weight="balanced"
+            n_estimators=300, max_depth=10, min_samples_split=8,
+            min_samples_leaf=4, random_state=42, n_jobs=-1,
+            class_weight="balanced"
         ),
         "GradientBoosting": GradientBoostingClassifier(
-            n_estimators=150, max_depth=5, learning_rate=0.1,
-            random_state=42
+            n_estimators=200, max_depth=4, learning_rate=0.08,
+            subsample=0.85, random_state=42
         ),
     }
 
@@ -54,8 +56,15 @@ def entrenar_modelo(X_train, y_train, X_test, y_test, multiclase=False):
     metricas     = {}
 
     for nombre, modelo in candidatos.items():
-        modelo.fit(X_train, y_train)
-        y_pred = modelo.predict(X_test)
+        if multiclase:
+            modelo.fit(X_train, y_train)
+            calibrado = modelo
+        else:
+            # Calibrar probabilidades con isotonic regression (5-fold CV interno)
+            calibrado = CalibratedClassifierCV(modelo, cv=5, method="isotonic")
+            calibrado.fit(X_train, y_train)
+
+        y_pred = calibrado.predict(X_test)
         acc = accuracy_score(y_test, y_pred)
         avg = "weighted" if multiclase else "binary"
         p, r, f1, _ = precision_recall_fscore_support(
@@ -65,7 +74,7 @@ def entrenar_modelo(X_train, y_train, X_test, y_test, multiclase=False):
 
         if f1 > mejor_score:
             mejor_score  = f1
-            mejor_modelo = modelo
+            mejor_modelo = calibrado
             mejor_nombre = nombre
 
     return mejor_modelo, mejor_nombre, metricas
