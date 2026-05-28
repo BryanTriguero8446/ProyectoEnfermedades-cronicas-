@@ -7,4 +7,6 @@ urlpatterns = [
     path('nueva/<int:datos_pk>/', views.nueva_prediccion, name='nueva'),
     path('resultado/<int:pk>/', views.resultado, name='resultado'),
     path('historial/', views.historial_predicciones, name='historial'),
+    # API REST — análisis con antecedentes familiares (JWT o sesión)
+    path('api/analizar/', views.api_analizar, name='api_analizar'),
 ]

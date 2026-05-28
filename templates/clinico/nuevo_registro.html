@@ -1,54 +1,55 @@
 {% extends 'base.html' %}
-{% block title %}Nuevo Registro Clínico{% endblock %}
-{% block page_title %}Nuevo Registro Clínico{% endblock %}
-{% block nav_nuevo %}active{% endblock %}
+{% block title %}{% if registro %}Editar Registro{% else %}Nuevo Registro Clínico{% endif %}{% endblock %}
+{% block page_title %}{% if registro %}Editar Registro #{{ registro.pk }}{% else %}Nuevo Registro Clínico{% endif %}{% endblock %}
+{% block nav_nuevo %}{% if not registro %}active{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>
 .section-card {
     background: #fff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #C5DFFF;
     border-radius: 12px;
     margin-bottom: 20px;
     overflow: hidden;
 }
 .section-card-header {
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
+    background: #F4FAFF;
+    border-bottom: 1px solid #C5DFFF;
     padding: 14px 20px;
     display: flex;
     align-items: center;
     gap: 10px;
     font-weight: 600;
     font-size: 14px;
-    color: #1e293b;
+    color: #0D2C4F;
 }
-.section-card-header i { color: #1a73e8; font-size: 18px; }
-.section-card-body { padding: 20px; }
-.unit-label {
-    background: #f0f4f8;
-    border: 1.5px solid #e2e8f0;
-    border-left: none;
-    border-radius: 0 8px 8px 0;
-    padding: 8px 12px;
-    font-size: 12px;
-    color: #64748b;
-    font-weight: 500;
-}
-.range-hint { font-size: 11px; color: #5A84AD; margin-top: 3px; }
 .section-card-header i { color: #1E90FF; font-size: 18px; }
+.section-card-body { padding: 20px; }
 .unit-label { background:#EAF4FF; border:1.5px solid #C5DFFF; border-left:none; border-radius:0 8px 8px 0; padding:8px 12px; font-size:12px; color:#5A84AD; font-weight:500; }
+.range-hint { font-size: 11px; color: #5A84AD; margin-top: 3px; }
 .imc-preview {
-    background: linear-gradient(135deg, #e8f0fe, #dbeafe);
+    background: linear-gradient(135deg, #EAF4FF, #DDEEFF);
     border-radius: 10px;
     padding: 16px;
     text-align: center;
-    border: 1px solid #bfdbfe;
+    border: 1px solid #C5DFFF;
 }
-.imc-value { font-size: 32px; font-weight: 700; color: #1a73e8; }
-.imc-label { font-size: 12px; color: #64748b; }
+.imc-value { font-size: 32px; font-weight: 700; color: #1E90FF; }
+.imc-label { font-size: 12px; color: #5A84AD; }
 .toggle-switch { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
 .toggle-switch label { font-weight: 500; font-size: 14px; cursor: pointer; }
+.edit-banner {
+    background: linear-gradient(135deg, #fff8e1, #fff3cd);
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    padding: 12px 18px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #92400e;
+}
 </style>
 {% endblock %}
 
@@ -58,11 +59,27 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0" style="font-size:13px;">
                 <li class="breadcrumb-item"><a href="{% url 'usuarios:dashboard' %}">Principal</a></li>
+                {% if registro %}
+                <li class="breadcrumb-item"><a href="{% url 'clinico:detalle' registro.pk %}">Registro #{{ registro.pk }}</a></li>
+                <li class="breadcrumb-item active">Editar</li>
+                {% else %}
                 <li class="breadcrumb-item active">Nuevo Registro</li>
+                {% endif %}
             </ol>
         </nav>
     </div>
 </div>
+
+{% if registro %}
+<div class="edit-banner">
+    <i class="bi bi-pencil-square" style="font-size:18px;color:#d97706;"></i>
+    <div>
+        <strong>Modo edición</strong> — Estás modificando el registro del
+        <strong>{{ registro.fecha_registro|date:"d/m/Y H:i" }}</strong>.
+        Solo se actualizarán los campos que cambies.
+    </div>
+</div>
+{% endif %}
 
 <form method="post" id="formClinico" novalidate>
 {% csrf_token %}
@@ -82,7 +99,10 @@
                         <label class="form-label">Edad <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="edad" id="edad"
-                                   min="1" max="120" placeholder="35" required oninput="validar(this,'edad')">
+                                   min="1" max="120" placeholder="35" required
+                                   value="{% if registro %}{{ registro.edad }}{% endif %}"
+                                   oninput="validar(this,'edad')"
+                                   onblur="bloquear(this);validar(this,'edad')">
                             <span class="unit-label">años</span>
                         </div>
                         <div class="range-hint">Rango válido: 1 – 120 años</div>
@@ -92,7 +112,10 @@
                         <label class="form-label">Peso <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="peso" id="peso"
-                                   min="1" max="300" step="0.1" placeholder="70.0" required oninput="calcIMC();validar(this,'peso')">
+                                   min="1" max="300" step="0.1" placeholder="70.0" required
+                                   value="{% if registro %}{{ registro.peso }}{% endif %}"
+                                   oninput="calcIMC();validar(this,'peso')"
+                                   onblur="bloquear(this);calcIMC();validar(this,'peso')">
                             <span class="unit-label">kg</span>
                         </div>
                         <div class="range-hint">Rango válido: 1 – 300 kg</div>
@@ -102,7 +125,10 @@
                         <label class="form-label">Altura <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="altura" id="altura"
-                                   min="0.5" max="2.5" step="0.01" placeholder="1.70" required oninput="calcIMC();validar(this,'altura')">
+                                   min="0.5" max="2.5" step="0.01" placeholder="1.70" required
+                                   value="{% if registro %}{{ registro.altura }}{% endif %}"
+                                   oninput="calcIMC();validar(this,'altura')"
+                                   onblur="bloquear(this);calcIMC();validar(this,'altura')">
                             <span class="unit-label">m</span>
                         </div>
                         <div class="range-hint">Rango válido: 0.50 – 2.50 m</div>
@@ -123,7 +149,10 @@
                         <label class="form-label">Presión Sistólica <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="presion_sistolica" id="presion_sistolica"
-                                   min="50" max="300" placeholder="120" required oninput="validar(this,'presion_sistolica')">
+                                   min="50" max="300" placeholder="120" required
+                                   value="{% if registro %}{{ registro.presion_sistolica }}{% endif %}"
+                                   oninput="validar(this,'presion_sistolica')"
+                                   onblur="bloquear(this);validar(this,'presion_sistolica')">
                             <span class="unit-label">mmHg</span>
                         </div>
                         <div class="range-hint">Normal: &lt;120</div>
@@ -133,7 +162,10 @@
                         <label class="form-label">Presión Diastólica <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="presion_diastolica" id="presion_diastolica"
-                                   min="30" max="200" placeholder="80" required oninput="validar(this,'presion_diastolica')">
+                                   min="30" max="200" placeholder="80" required
+                                   value="{% if registro %}{{ registro.presion_diastolica }}{% endif %}"
+                                   oninput="validar(this,'presion_diastolica')"
+                                   onblur="bloquear(this);validar(this,'presion_diastolica')">
                             <span class="unit-label">mmHg</span>
                         </div>
                         <div class="range-hint">Normal: &lt;80</div>
@@ -143,7 +175,10 @@
                         <label class="form-label">Glucosa <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="glucosa" id="glucosa"
-                                   min="10" max="600" step="0.1" placeholder="90" required oninput="validar(this,'glucosa')">
+                                   min="10" max="600" step="0.1" placeholder="90" required
+                                   value="{% if registro %}{{ registro.glucosa }}{% endif %}"
+                                   oninput="validar(this,'glucosa')"
+                                   onblur="bloquear(this);validar(this,'glucosa')">
                             <span class="unit-label">mg/dL</span>
                         </div>
                         <div class="range-hint">Normal: 70–100</div>
@@ -153,7 +188,10 @@
                         <label class="form-label">Frec. Cardíaca <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="frecuencia_cardiaca" id="frecuencia_cardiaca"
-                                   min="30" max="300" placeholder="72" required oninput="validar(this,'frecuencia_cardiaca')">
+                                   min="30" max="300" placeholder="72" required
+                                   value="{% if registro %}{{ registro.frecuencia_cardiaca }}{% endif %}"
+                                   oninput="validar(this,'frecuencia_cardiaca')"
+                                   onblur="bloquear(this);validar(this,'frecuencia_cardiaca')">
                             <span class="unit-label">lpm</span>
                         </div>
                         <div class="range-hint">Normal: 60–100</div>
@@ -174,7 +212,10 @@
                         <label class="form-label">Colesterol Total</label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="colesterol" id="colesterol"
-                                   min="50" max="600" step="0.1" placeholder="180" oninput="validar(this,'colesterol')">
+                                   min="50" max="600" step="0.1" placeholder="180"
+                                   value="{% if registro and registro.colesterol %}{{ registro.colesterol }}{% endif %}"
+                                   oninput="validar(this,'colesterol')"
+                                   onblur="bloquear(this);validar(this,'colesterol')">
                             <span class="unit-label">mg/dL</span>
                         </div>
                         <div class="range-hint">Deseable: &lt;200</div>
@@ -184,7 +225,10 @@
                         <label class="form-label">Triglicéridos</label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="trigliceridos" id="trigliceridos"
-                                   min="20" max="2000" step="0.1" placeholder="150" oninput="validar(this,'trigliceridos')">
+                                   min="20" max="2000" step="0.1" placeholder="150"
+                                   value="{% if registro and registro.trigliceridos %}{{ registro.trigliceridos }}{% endif %}"
+                                   oninput="validar(this,'trigliceridos')"
+                                   onblur="bloquear(this);validar(this,'trigliceridos')">
                             <span class="unit-label">mg/dL</span>
                         </div>
                         <div class="range-hint">Normal: &lt;150</div>
@@ -194,11 +238,183 @@
                         <label class="form-label">Creatinina</label>
                         <div class="input-group">
                             <input type="number" class="form-control" name="creatinina" id="creatinina"
-                                   min="0.1" max="20" step="0.01" placeholder="1.0" oninput="validar(this,'creatinina')">
+                                   min="0.1" max="20" step="0.01" placeholder="1.0"
+                                   value="{% if registro and registro.creatinina %}{{ registro.creatinina }}{% endif %}"
+                                   oninput="validar(this,'creatinina')"
+                                   onblur="bloquear(this);validar(this,'creatinina')">
                             <span class="unit-label">mg/dL</span>
                         </div>
                         <div class="range-hint">Normal: 0.6–1.2</div>
                         <div class="range-feedback" id="fb-creatinina"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Antecedentes Familiares -->
+        <div class="section-card">
+            <div class="section-card-header">
+                <i class="bi bi-people"></i>Antecedentes Familiares
+                <span class="badge bg-info text-dark ms-2" style="font-weight:500;">OPCIONAL</span>
+                <span style="font-weight:400;color:#94a3b8;font-size:12px;margin-left:6px;">(padres o hermanos)</span>
+                <!-- Tooltip de ayuda -->
+                <span class="ms-auto" data-bs-toggle="tooltip" data-bs-placement="left"
+                      title="Marcar si un familiar directo (padre, madre o hermano/a) ha sido diagnosticado con la enfermedad. Mejora la precisión del análisis de riesgo genético."
+                      style="cursor:help;color:#94a3b8;font-size:16px;">
+                    <i class="bi bi-info-circle-fill"></i>
+                </span>
+            </div>
+            <div class="section-card-body">
+                <div class="p-3 rounded mb-4" style="background:#f0f9ff;border:1px solid #bae6fd;border-left:4px solid #0284c7;font-size:12.5px;color:#0c4a6e;">
+                    <i class="bi bi-lightbulb me-2"></i>
+                    <strong>¿Por qué es importante?</strong> Los antecedentes familiares aumentan el riesgo genético.
+                    El sistema aplicará multiplicadores validados (ADA, ESC, JNC 8) para mejorar la predicción.
+                </div>
+
+                <!-- Diabetes Tipo 2 -->
+                <div class="mb-4 pb-3 border-bottom">
+                    <div class="d-flex align-items-center mb-3">
+                        <div style="width:32px;height:32px;background:#ffe8cc;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                            <i class="bi bi-droplet" style="color:#e67e22;font-size:16px;"></i>
+                        </div>
+                        <div class="ms-3 flex-grow-1">
+                            <div class="fw-600" style="font-size:14px;color:#0D2C4F;">Diabetes Tipo 2</div>
+                        </div>
+                    </div>
+                    <div class="row g-2 ms-0">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded border-2" style="background:#fff5e6;border:2px solid #fbbf24;cursor:pointer;transition:all .2s;"
+                                 onclick="document.getElementById('antec_diabetes_uno').click();">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input antec-checkbox" type="checkbox"
+                                           name="antec_diabetes_uno" id="antec_diabetes_uno"
+                                           data-grupo="diabetes"
+                                           data-excluye="antec_diabetes_ambos"
+                                           {% if registro and registro.antec_diabetes_uno %}checked{% endif %}>
+                                    <label class="form-check-label" for="antec_diabetes_uno" style="font-size:13px;margin:0;cursor:pointer;">
+                                        <strong>Un padre o hermano</strong>
+                                        <span class="badge bg-warning text-dark ms-2" style="font-size:11px;">×2.3 riesgo</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded border-2" style="background:#ffe0e0;border:2px solid #ef4444;cursor:pointer;transition:all .2s;"
+                                 onclick="document.getElementById('antec_diabetes_ambos').click();">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input antec-checkbox" type="checkbox"
+                                           name="antec_diabetes_ambos" id="antec_diabetes_ambos"
+                                           data-grupo="diabetes"
+                                           data-excluye="antec_diabetes_uno"
+                                           {% if registro and registro.antec_diabetes_ambos %}checked{% endif %}>
+                                    <label class="form-check-label" for="antec_diabetes_ambos" style="font-size:13px;margin:0;cursor:pointer;">
+                                        <strong>Ambos padres</strong>
+                                        <span class="badge bg-danger ms-2" style="font-size:11px;">fijo 60%</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hipertensión Arterial -->
+                <div class="mb-4 pb-3 border-bottom">
+                    <div class="d-flex align-items-center mb-3">
+                        <div style="width:32px;height:32px;background:#fee2e2;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                            <i class="bi bi-heart-pulse" style="color:#e74c3c;font-size:16px;"></i>
+                        </div>
+                        <div class="ms-3 flex-grow-1">
+                            <div class="fw-600" style="font-size:14px;color:#0D2C4F;">Hipertensión Arterial</div>
+                        </div>
+                    </div>
+                    <div class="row g-2 ms-0">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded border-2" style="background:#fff5e6;border:2px solid #fbbf24;cursor:pointer;transition:all .2s;"
+                                 onclick="document.getElementById('antec_hta_uno').click();">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input antec-checkbox" type="checkbox"
+                                           name="antec_hta_uno" id="antec_hta_uno"
+                                           data-grupo="hta"
+                                           data-excluye="antec_hta_ambos"
+                                           {% if registro and registro.antec_hta_uno %}checked{% endif %}>
+                                    <label class="form-check-label" for="antec_hta_uno" style="font-size:13px;margin:0;cursor:pointer;">
+                                        <strong>Un familiar</strong>
+                                        <span class="badge bg-warning text-dark ms-2" style="font-size:11px;">×2.4 riesgo</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded border-2" style="background:#ffe0e0;border:2px solid #ef4444;cursor:pointer;transition:all .2s;"
+                                 onclick="document.getElementById('antec_hta_ambos').click();">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input antec-checkbox" type="checkbox"
+                                           name="antec_hta_ambos" id="antec_hta_ambos"
+                                           data-grupo="hta"
+                                           data-excluye="antec_hta_uno"
+                                           {% if registro and registro.antec_hta_ambos %}checked{% endif %}>
+                                    <label class="form-check-label" for="antec_hta_ambos" style="font-size:13px;margin:0;cursor:pointer;">
+                                        <strong>Ambos padres</strong>
+                                        <span class="badge bg-danger ms-2" style="font-size:11px;">×4.5 riesgo</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Otras enfermedades -->
+                <div class="mb-2">
+                    <div class="fw-600 mb-3" style="font-size:13px;color:#0D2C4F;">Otras enfermedades hereditarias</div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="p-3 rounded border-2 h-100" style="background:#f3e8ff;border:1px solid #d8b4fe;cursor:pointer;transition:all .2s;"
+                                 onclick="document.getElementById('antec_renal').click();">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="checkbox"
+                                           name="antec_renal" id="antec_renal"
+                                           {% if registro and registro.antec_renal %}checked{% endif %}>
+                                    <label class="form-check-label" for="antec_renal" style="font-size:13px;margin:0;cursor:pointer;">
+                                        <i class="bi bi-activity me-2" style="color:#9b59b6;font-weight:600;"></i>
+                                        <strong>Enf. Renal</strong>
+                                        <span class="badge bg-secondary ms-2" style="font-size:10px;">×2.5</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 rounded border-2 h-100" style="background:#f0fdf4;border:1px solid #bbf7d0;cursor:pointer;transition:all .2s;"
+                                 onclick="document.getElementById('antec_nafld').click();">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="checkbox"
+                                           name="antec_nafld" id="antec_nafld"
+                                           {% if registro and registro.antec_nafld %}checked{% endif %}>
+                                    <label class="form-check-label" for="antec_nafld" style="font-size:13px;margin:0;cursor:pointer;">
+                                        <i class="bi bi-shield me-2" style="color:#27ae60;font-weight:600;"></i>
+                                        <strong>Hígado Graso</strong>
+                                        <span class="badge bg-secondary ms-2" style="font-size:10px;">×1.7</span>
+                                    </label>
+                                    <small class="d-block text-muted mt-2" style="font-size:11px;margin-left:24px;">
+                                        <i class="bi bi-info-circle"></i> Solo si IMC &gt; 25
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 rounded border-2 h-100" style="background:#fee2e2;border:1px solid #fecaca;cursor:pointer;transition:all .2s;"
+                                 onclick="document.getElementById('antec_cardiaco').click();">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="checkbox"
+                                           name="antec_cardiaco" id="antec_cardiaco"
+                                           {% if registro and registro.antec_cardiaco %}checked{% endif %}>
+                                    <label class="form-check-label" for="antec_cardiaco" style="font-size:13px;margin:0;cursor:pointer;">
+                                        <i class="bi bi-heart-fill me-2" style="color:#c0392b;font-weight:600;"></i>
+                                        <strong>Insuf. Cardíaca</strong>
+                                        <span class="badge bg-secondary ms-2" style="font-size:10px;">×1.7</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -214,17 +430,19 @@
                     <div class="col-md-12">
                         <label class="form-label">Nivel de actividad física</label>
                         <select name="actividad_fisica" class="form-select">
-                            <option value="sedentario">🪑 Sedentario — sin ejercicio regular</option>
-                            <option value="leve">🚶 Leve — ejercicio 1–2 veces/semana</option>
-                            <option value="moderado" selected>🏃 Moderado — 3–4 veces/semana</option>
-                            <option value="activo">⚽ Activo — 5+ veces/semana</option>
-                            <option value="muy_activo">🏋️ Muy activo — entrenamiento intenso diario</option>
+                            <option value="sedentario" {% if registro and registro.actividad_fisica == 'sedentario' %}selected{% endif %}>🪑 Sedentario — sin ejercicio regular</option>
+                            <option value="leve"       {% if registro and registro.actividad_fisica == 'leve' %}selected{% elif not registro %}{% endif %}>🚶 Leve — ejercicio 1–2 veces/semana</option>
+                            <option value="moderado"   {% if registro and registro.actividad_fisica == 'moderado' %}selected{% elif not registro %}selected{% endif %}>🏃 Moderado — 3–4 veces/semana</option>
+                            <option value="activo"     {% if registro and registro.actividad_fisica == 'activo' %}selected{% endif %}>⚽ Activo — 5+ veces/semana</option>
+                            <option value="muy_activo" {% if registro and registro.actividad_fisica == 'muy_activo' %}selected{% endif %}>🏋️ Muy activo — entrenamiento intenso diario</option>
                         </select>
                     </div>
                     <div class="col-md-6">
                         <div class="toggle-switch">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="fumador" id="fumador" style="width:42px;height:22px;">
+                                <input class="form-check-input" type="checkbox" name="fumador" id="fumador"
+                                       style="width:42px;height:22px;"
+                                       {% if registro and registro.fumador %}checked{% endif %}>
                                 <label class="form-check-label ms-2" for="fumador">
                                     <i class="bi bi-tornado me-1"></i>Fumador actual
                                 </label>
@@ -234,7 +452,9 @@
                     <div class="col-md-6">
                         <div class="toggle-switch">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="alcohol" id="alcohol" style="width:42px;height:22px;">
+                                <input class="form-check-input" type="checkbox" name="alcohol" id="alcohol"
+                                       style="width:42px;height:22px;"
+                                       {% if registro and registro.alcohol %}checked{% endif %}>
                                 <label class="form-check-label ms-2" for="alcohol">
                                     <i class="bi bi-cup-straw me-1"></i>Consumo de alcohol
                                 </label>
@@ -244,7 +464,7 @@
                     <div class="col-12">
                         <label class="form-label">Observaciones clínicas</label>
                         <textarea class="form-control" name="observaciones" rows="3"
-                                  placeholder="Notas adicionales, síntomas, medicamentos..."></textarea>
+                                  placeholder="Notas adicionales, síntomas, medicamentos...">{% if registro %}{{ registro.observaciones }}{% endif %}</textarea>
                     </div>
                 </div>
             </div>
@@ -262,8 +482,8 @@
             </div>
             <div class="section-card-body">
                 <div class="imc-preview">
-                    <div class="imc-value" id="imc-display">—</div>
-                    <div class="imc-label mt-1" id="imc-clasif">Ingresa peso y altura</div>
+                    <div class="imc-value" id="imc-display">{% if registro and registro.imc %}{{ registro.imc|floatformat:1 }}{% else %}—{% endif %}</div>
+                    <div class="imc-label mt-1" id="imc-clasif">{% if registro %}{{ registro.clasificacion_imc }}{% else %}Ingresa peso y altura{% endif %}</div>
                 </div>
                 <div class="mt-3" style="font-size:12px;color:#64748b;">
                     <div class="d-flex justify-content-between mb-1"><span>Bajo peso</span><span>&lt;18.5</span></div>
@@ -297,16 +517,26 @@
         <!-- Submit -->
         <div class="d-grid gap-2">
             <button type="submit" class="btn btn-primary btn-lg">
-                <i class="bi bi-save me-2"></i>Guardar registro
+                <i class="bi bi-save me-2"></i>{% if registro %}Actualizar registro{% else %}Guardar registro{% endif %}
             </button>
+            {% if registro %}
+            <a href="{% url 'clinico:detalle' registro.pk %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x me-1"></i>Cancelar edición
+            </a>
+            {% else %}
             <a href="{% url 'usuarios:dashboard' %}" class="btn btn-outline-secondary">
                 <i class="bi bi-x me-1"></i>Cancelar
             </a>
+            {% endif %}
         </div>
 
         <div class="mt-3 p-3 rounded" style="background:#fffbeb;border:1px solid #fde68a;font-size:11.5px;color:#92400e;">
             <i class="bi bi-lightbulb me-1"></i>
+            {% if registro %}
+            Al guardar se regenerarán las alertas automáticas para este registro.
+            {% else %}
             Después de guardar podrás ejecutar el análisis predictivo de riesgo.
+            {% endif %}
         </div>
 
     </div>
@@ -330,6 +560,17 @@ const RANGOS = {
     creatinina:         { min:0.1, max:20,   warnLo:0.6,  warnHi:1.2,   msgErr:'Fuera de rango (0.1–20 mg/dL)', msgWarn:'Fuera del rango normal (0.6–1.2 mg/dL)' },
 };
 
+/* Bloqueo estricto: impide escribir fuera del rango min/max */
+function bloquear(input) {
+    if (input.value === '' || input.value === '-') return;
+    const min = parseFloat(input.min);
+    const max = parseFloat(input.max);
+    let val = parseFloat(input.value);
+    if (!isNaN(min) && val < min) { input.value = min; }
+    if (!isNaN(max) && val > max) { input.value = max; }
+}
+
+/* Validación con color + mensaje */
 function validar(input, campo) {
     const r = RANGOS[campo];
     if (!r) return;
@@ -379,5 +620,136 @@ function calcIMC() {
         clasif.textContent = 'Ingresa peso y altura';
     }
 }
+
+const CAMPOS_REQUIRED = ['edad','peso','altura','presion_sistolica','presion_diastolica','glucosa','frecuencia_cardiaca'];
+const CAMPOS_OPC      = ['colesterol','trigliceridos','creatinina'];
+
+/* Validación al enviar: corre bloquear + validar en todos los campos y detiene si hay errores */
+document.getElementById('formClinico').addEventListener('submit', function(e) {
+    let hayError = false;
+
+    [...CAMPOS_REQUIRED, ...CAMPOS_OPC].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (!el || el.value === '') return;   // opcionales vacíos: ok
+        bloquear(el);
+        validar(el, id);
+        if (el.classList.contains('rango-error')) hayError = true;
+    });
+
+    // Verificar campos requeridos vacíos
+    CAMPOS_REQUIRED.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el && el.value.trim() === '') hayError = true;
+    });
+
+    if (hayError) {
+        e.preventDefault();
+        // Mostrar alerta flotante
+        let alertEl = document.getElementById('submit-error-alert');
+        if (!alertEl) {
+            alertEl = document.createElement('div');
+            alertEl.id = 'submit-error-alert';
+            alertEl.className = 'alert alert-danger d-flex align-items-center gap-2 mt-2 mb-0';
+            alertEl.innerHTML = '<i class="bi bi-exclamation-octagon-fill fs-5"></i>'
+                + '<span>Corrige los valores fuera de rango antes de guardar.</span>';
+            const submitBtn = document.querySelector('[type="submit"]');
+            submitBtn.parentNode.insertBefore(alertEl, submitBtn);
+        }
+        alertEl.style.display = 'flex';
+        // Scroll al primer error
+        const primerError = document.querySelector('.rango-error');
+        if (primerError) primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+
+/* Si estamos en modo edición, inicializar IMC y feedback al cargar */
+document.addEventListener('DOMContentLoaded', function() {
+    const enEdicion = {{ registro|yesno:"true,false" }};
+    if (enEdicion) {
+        calcIMC();
+        [...CAMPOS_REQUIRED, ...CAMPOS_OPC].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el && el.value) validar(el, id);
+        });
+    }
+    // Inicializar tooltips de Bootstrap
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+        new bootstrap.Tooltip(el);
+    });
+});
+
+/* ─── Exclusividad de checkboxes (uno vs ambos padres) ─────────────────── */
+document.querySelectorAll('.antec-checkbox').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        const excluye = this.dataset.excluye;
+        if (this.checked && excluye) {
+            const otro = document.getElementById(excluye);
+            if (otro) otro.checked = false;
+        }
+    });
+});
+
+/* ─── API REST: enviar antecedentes + datos_pk con JWT ──────────────────── *
+ *                                                                           *
+ *  Uso externo (móvil / SPA):                                               *
+ *    1. Obtener token:  POST /api/token/  { correo, password }              *
+ *    2. Analizar:       POST /prediccion/api/analizar/  (Bearer token)      *
+ *                                                                           *
+ *  Desde esta misma página la autenticación usa la sesión Django            *
+ *  (CSRF), pero la función está disponible para uso programático.           *
+ * ─────────────────────────────────────────────────────────────────────────*/
+
+/**
+ * analizarConAntecedentes
+ * Llama al endpoint DRF y aplica los multiplicadores de riesgo familiar.
+ *
+ * @param {number} datosPk   - PK del DatosClinico ya guardado en el servidor
+ * @param {string} jwtToken  - Token Bearer (dejar vacío para usar sesión Django)
+ * @returns {Promise<Object>} Resultado de la predicción con campos de riesgo
+ */
+async function analizarConAntecedentes(datosPk, jwtToken = '') {
+    // Construir objeto de antecedentes desde los checkboxes del formulario
+    const antecedentes = {
+        diabetes_uno:       document.getElementById('antec_diabetes_uno')?.checked  ?? false,
+        diabetes_ambos:     document.getElementById('antec_diabetes_ambos')?.checked ?? false,
+        hipertension_uno:   document.getElementById('antec_hta_uno')?.checked       ?? false,
+        hipertension_ambos: document.getElementById('antec_hta_ambos')?.checked     ?? false,
+        renal:              document.getElementById('antec_renal')?.checked          ?? false,
+        nafld:              document.getElementById('antec_nafld')?.checked          ?? false,
+        cardiaco:           document.getElementById('antec_cardiaco')?.checked       ?? false,
+    };
+
+    // Headers: JWT si se proporciona, CSRF si se usa sesión
+    const headers = { 'Content-Type': 'application/json' };
+    if (jwtToken) {
+        headers['Authorization'] = 'Bearer ' + jwtToken;
+    } else {
+        // Leer CSRF token de la cookie para autenticación por sesión
+        const csrfCookie = document.cookie.split('; ')
+            .find(c => c.startsWith('csrftoken='));
+        if (csrfCookie) headers['X-CSRFToken'] = csrfCookie.split('=')[1];
+    }
+
+    const response = await fetch('/prediccion/api/analizar/', {
+        method:      'POST',
+        headers:     headers,
+        credentials: 'include',   // envía cookie de sesión
+        body:        JSON.stringify({ datos_pk: datosPk, antecedentes }),
+    });
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'Error ' + response.status);
+    }
+    return response.json();
+}
+
+// Ejemplo de uso automático al cargar si hay datos_pk en la URL:
+// const params = new URLSearchParams(window.location.search);
+// if (params.has('analizar_pk')) {
+//     analizarConAntecedentes(+params.get('analizar_pk'))
+//         .then(res => console.log('Predicción:', res))
+//         .catch(console.error);
+// }
 </script>
 {% endblock %}

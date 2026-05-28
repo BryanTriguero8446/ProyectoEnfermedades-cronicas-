@@ -5,6 +5,7 @@ app_name = 'clinico'
 
 urlpatterns = [
     path('nuevo/', views.nuevo_registro, name='nuevo_registro'),
+    path('editar/<int:pk>/', views.editar_registro, name='editar_registro'),
     path('historial/', views.historial, name='historial'),
     path('detalle/<int:pk>/', views.detalle, name='detalle'),
     path('api/historial/', views.api_historial_json, name='api_historial'),

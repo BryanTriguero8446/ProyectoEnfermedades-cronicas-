@@ -48,6 +48,28 @@ class DatosClinico(models.Model):
     fumador = models.BooleanField(default=False)
     alcohol = models.BooleanField(default=False)
     observaciones = models.TextField(blank=True)
+
+    # ── Antecedentes familiares de primer grado ──────────────────────────────
+    # Diabetes Tipo 2
+    antec_diabetes_uno   = models.BooleanField(default=False,
+        help_text='Un padre o hermano tiene Diabetes Tipo 2')
+    antec_diabetes_ambos = models.BooleanField(default=False,
+        help_text='Ambos padres tienen Diabetes Tipo 2')
+    # Hipertensión Arterial
+    antec_hta_uno        = models.BooleanField(default=False,
+        help_text='Un familiar tiene Hipertensión Arterial')
+    antec_hta_ambos      = models.BooleanField(default=False,
+        help_text='Ambos padres tienen Hipertensión Arterial')
+    # Enfermedad Renal Crónica
+    antec_renal          = models.BooleanField(default=False,
+        help_text='Familiar directo con Enfermedad Renal Crónica')
+    # Hígado Graso (NAFLD)
+    antec_nafld          = models.BooleanField(default=False,
+        help_text='Familiar directo con Hígado Graso No Alcohólico')
+    # Insuficiencia Cardíaca
+    antec_cardiaco       = models.BooleanField(default=False,
+        help_text='Familiar directo con Insuficiencia Cardíaca')
+
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
     class Meta:

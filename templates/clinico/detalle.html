@@ -12,15 +12,22 @@
             <li class="breadcrumb-item active">Registro #{{ registro.pk }}</li>
         </ol>
     </nav>
-    {% if not registro.predicciones.exists %}
-    <a href="{% url 'prediccion:nueva' registro.pk %}" class="btn btn-primary btn-sm">
-        <i class="bi bi-graph-up-arrow me-1"></i>Analizar riesgo
-    </a>
-    {% else %}
-    <a href="{% url 'prediccion:resultado' registro.predicciones.first.pk %}" class="btn btn-outline-primary btn-sm">
-        <i class="bi bi-bar-chart me-1"></i>Ver predicción
-    </a>
-    {% endif %}
+    <div class="d-flex gap-2">
+        {% if user.rol != 'administrador' %}
+        <a href="{% url 'clinico:editar_registro' registro.pk %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-pencil-square me-1"></i>Editar
+        </a>
+        {% endif %}
+        {% if not registro.predicciones.exists %}
+        <a href="{% url 'prediccion:nueva' registro.pk %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-graph-up-arrow me-1"></i>Analizar riesgo
+        </a>
+        {% else %}
+        <a href="{% url 'prediccion:resultado' registro.predicciones.first.pk %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-bar-chart me-1"></i>Ver predicción
+        </a>
+        {% endif %}
+    </div>
 </div>
 
 <!-- Header card -->

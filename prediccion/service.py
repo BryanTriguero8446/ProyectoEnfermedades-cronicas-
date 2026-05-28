@@ -120,7 +120,7 @@ def _predecir_con_ml(datos):
         resultados[f'riesgo_{django_key}'] = round(riesgo_pct, 2)
         resultados[f'nivel_{django_key}']  = nivel_str
 
-    resultados['modelo_version'] = 'ml_v1_rf_gb'
+    resultados['modelo_version'] = 'ml_v2_calibrado'
     return resultados
 
 
@@ -234,6 +234,121 @@ def _predecir_con_reglas(datos):
 
 
 # ═════════════════════════════════════════════════════════════════════════════
+# ESTIMACIÓN TEMPORAL
+# ═════════════════════════════════════════════════════════════════════════════
+
+def estimar_tiempo_enfermedad(riesgo_pct, tendencia='estable'):
+    """
+    Dado un porcentaje de riesgo, estima en cuántos años podría materializarse
+    la enfermedad si el paciente NO cambia sus hábitos.
+
+    tendencia: 'subiendo' | 'estable' | 'bajando'
+    Retorna dict con: texto, urgencia ('alto'|'medio'|'bajo'), años (número medio)
+    """
+    riesgo = float(riesgo_pct)
+
+    if riesgo < 20:
+        return {'texto': 'Sin riesgo significativo activo', 'urgencia': 'bajo', 'años': None}
+
+    if   riesgo >= 85: lo, hi = 1,  2
+    elif riesgo >= 70: lo, hi = 2,  4
+    elif riesgo >= 55: lo, hi = 4,  7
+    elif riesgo >= 40: lo, hi = 7,  12
+    else:              lo, hi = 12, 20
+
+    if tendencia == 'subiendo':
+        lo = max(1, lo - 1)
+        hi = max(2, hi - 1)
+        sufijo = ' (riesgo en aumento ↑)'
+    elif tendencia == 'bajando':
+        lo += 2;  hi += 4
+        sufijo = ' (riesgo disminuyendo ↓)'
+    else:
+        sufijo = ''
+
+    urgencia = 'alto' if lo <= 3 else ('medio' if lo <= 8 else 'bajo')
+    texto    = f'{lo} – {hi} años{sufijo}'
+    return {'texto': texto, 'urgencia': urgencia, 'años': (lo + hi) // 2}
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# AJUSTE POR ANTECEDENTES FAMILIARES
+# ═════════════════════════════════════════════════════════════════════════════
+
+def adjust_family_risk(scores: dict, antecedentes: dict, contexto: dict = None) -> dict:
+    """
+    Recalibra los scores de riesgo según antecedentes familiares de primer grado.
+
+    Reglas estadísticas implementadas (fuente: ADA, ESC, JNC 8):
+      Diabetes  — un padre/hermano:  x2.3
+      Diabetes  — ambos padres:      fijo 0.60
+      HTA       — un familiar:       x2.4
+      HTA       — ambos padres:      x4.5
+      Renal     — familiar:          x2.5  (+0.5 si DM o HTA > 50%)
+      NAFLD     — familiar:          x1.7  (solo si IMC > 25)
+      Cardíaco  — familiar:          x1.7
+
+    Args:
+        scores     (dict): {'diabetes': 0.12, 'hipertension': 0.08, ...}  rango [0.0, 1.0]
+        antecedentes (dict): flags booleanos de antecedentes.
+        contexto   (dict, opcional): {'imc': 27.5, 'riesgo_diabetes': 0.12,
+                                      'riesgo_hipertension': 0.08}
+
+    Returns:
+        dict con mismas claves que scores, valores ajustados y normalizados en [0.0, 1.0].
+    """
+    ctx      = contexto or {}
+    ajustado = {k: float(v) for k, v in scores.items()}
+
+    # ── 1. Diabetes Tipo 2 ────────────────────────────────────────────────────
+    if antecedentes.get('diabetes_ambos'):
+        # Ambos padres → probabilidad fija del 60 %
+        ajustado['diabetes'] = 0.60
+    elif antecedentes.get('diabetes_uno'):
+        # Un padre o hermano → multiplicar x2.3
+        ajustado['diabetes'] = min(1.0, ajustado['diabetes'] * 2.3)
+
+    # ── 2. Hipertensión Arterial ──────────────────────────────────────────────
+    if antecedentes.get('hipertension_ambos'):
+        ajustado['hipertension'] = min(1.0, ajustado['hipertension'] * 4.5)
+    elif antecedentes.get('hipertension_uno'):
+        ajustado['hipertension'] = min(1.0, ajustado['hipertension'] * 2.4)
+
+    # ── 3. Enfermedad Renal Crónica ───────────────────────────────────────────
+    if antecedentes.get('renal'):
+        factor_renal = 2.5
+        # Peso extra condicional si DM o HTA ya son > 50 %
+        if (ctx.get('riesgo_diabetes', ajustado.get('diabetes', 0)) > 0.5 or
+                ctx.get('riesgo_hipertension', ajustado.get('hipertension', 0)) > 0.5):
+            factor_renal += 0.5
+        ajustado['renal'] = min(1.0, ajustado['renal'] * factor_renal)
+
+    # ── 4. Hígado Graso No Alcohólico (NAFLD) ────────────────────────────────
+    if antecedentes.get('nafld') and ctx.get('imc', 0) > 25:
+        ajustado['nafld'] = min(1.0, ajustado['nafld'] * 1.7)
+
+    # ── 5. Insuficiencia Cardíaca ─────────────────────────────────────────────
+    if antecedentes.get('cardiaco'):
+        ajustado['cardiaco'] = min(1.0, ajustado['cardiaco'] * 1.7)
+
+    # Garantizar límite inferior 0.0 (numpy clip equivalente)
+    return {k: max(0.0, min(1.0, v)) for k, v in ajustado.items()}
+
+
+def _construir_antecedentes(datos) -> dict:
+    """Extrae los flags de antecedentes desde un objeto DatosClinico."""
+    return {
+        'diabetes_uno':       getattr(datos, 'antec_diabetes_uno',   False),
+        'diabetes_ambos':     getattr(datos, 'antec_diabetes_ambos', False),
+        'hipertension_uno':   getattr(datos, 'antec_hta_uno',        False),
+        'hipertension_ambos': getattr(datos, 'antec_hta_ambos',      False),
+        'renal':              getattr(datos, 'antec_renal',           False),
+        'nafld':              getattr(datos, 'antec_nafld',           False),
+        'cardiaco':           getattr(datos, 'antec_cardiaco',        False),
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
 # API PUBLICA
 # ═════════════════════════════════════════════════════════════════════════════
 
@@ -241,16 +356,58 @@ def predecir_riesgo(datos):
     """
     Calcula el riesgo para las 5 enfermedades cronicas.
 
-    Usa modelos ML si estan disponibles, sino aplica reglas clinicas.
-    Retorna dict con probabilidades y niveles para cada enfermedad.
+    Flujo:
+      1. Modelo ML (si disponible) o reglas clínicas → scores base
+      2. Ajuste por antecedentes familiares (adjust_family_risk)
+      3. Recalcular niveles según scores finales
+
+    Retorna dict con probabilidades y niveles por enfermedad.
     """
     if _cargar_modelos():
         try:
-            return _predecir_con_ml(datos)
+            resultado = _predecir_con_ml(datos)
         except Exception as e:
             logger.error(f"Fallo prediccion ML, usando reglas: {e}")
+            resultado = _predecir_con_reglas(datos)
+    else:
+        resultado = _predecir_con_reglas(datos)
 
-    return _predecir_con_reglas(datos)
+    # ── Aplicar ajuste por antecedentes ──────────────────────────────────────
+    antecedentes = _construir_antecedentes(datos)
+    tiene_antecedentes = any(antecedentes.values())
+
+    if tiene_antecedentes:
+        scores_base = {
+            'diabetes':     float(resultado.get('riesgo_diabetes',     0)) / 100,
+            'hipertension': float(resultado.get('riesgo_hipertension', 0)) / 100,
+            'renal':        float(resultado.get('riesgo_renal',        0)) / 100,
+            'nafld':        float(resultado.get('riesgo_nafld',        0)) / 100,
+            'cardiaco':     float(resultado.get('riesgo_cardiaco',     0)) / 100,
+        }
+        contexto = {
+            'imc':                float(datos.imc or 0),
+            'riesgo_diabetes':    scores_base['diabetes'],
+            'riesgo_hipertension': scores_base['hipertension'],
+        }
+        ajustados = adjust_family_risk(scores_base, antecedentes, contexto)
+
+        # Actualizar resultado con scores ajustados (convertir a %)
+        for key_score, key_resultado in [
+            ('diabetes',     'riesgo_diabetes'),
+            ('hipertension', 'riesgo_hipertension'),
+            ('renal',        'riesgo_renal'),
+            ('nafld',        'riesgo_nafld'),
+            ('cardiaco',     'riesgo_cardiaco'),
+        ]:
+            pct = round(ajustados[key_score] * 100, 2)
+            resultado[key_resultado] = pct
+            # Recalcular nivel
+            nivel_key = key_resultado.replace('riesgo_', 'nivel_')
+            resultado[nivel_key] = _nivel_from_prob(pct)
+
+        resultado['modelo_version'] = resultado.get('modelo_version', 'ml_v2') + '_af'
+
+    return resultado
 
 
 # ═════════════════════════════════════════════════════════════════════════════
