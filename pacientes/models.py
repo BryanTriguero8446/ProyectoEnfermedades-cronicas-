@@ -3,7 +3,7 @@ from usuarios.models import Usuario
 
 
 class PerfilPaciente(models.Model):
-    SEXO_CHOICES = [('M', 'Masculino'), ('F', 'Femenino'), ('O', 'Otro')]
+    SEXO_CHOICES = [('M', 'Hombre'), ('F', 'Mujer'), ('O', 'Prefiero no decirlo')]
 
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='perfil')
     fecha_nacimiento = models.DateField(null=True, blank=True)

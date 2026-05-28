@@ -128,6 +128,32 @@
                     <div class="risk-bar-wrap">
                         <div class="risk-bar {{ enf.nivel }}" style="width:{{ enf.riesgo }}%"></div>
                     </div>
+
+                    <!-- Estimación temporal -->
+                    {% if enf.tiempo.años %}
+                    <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+                        <span class="tiempo-badge {{ enf.tiempo.urgencia }}">
+                            <i class="bi bi-clock"></i>
+                            Sin cambios: {{ enf.tiempo.texto }}
+                        </span>
+                        {% if enf.tiempo.urgencia == 'alto' %}
+                        <span style="font-size:11.5px;color:#D63031;">
+                            <i class="bi bi-exclamation-circle me-1"></i>Atención médica recomendada
+                        </span>
+                        {% elif enf.tiempo.urgencia == 'medio' %}
+                        <span style="font-size:11.5px;color:#c47a00;">
+                            <i class="bi bi-info-circle me-1"></i>Cambios en estilo de vida aconsejables
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="mt-2">
+                        <span class="tiempo-badge bajo">
+                            <i class="bi bi-check-circle"></i>
+                            {{ enf.tiempo.texto }}
+                        </span>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

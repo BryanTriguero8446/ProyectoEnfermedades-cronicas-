@@ -14,6 +14,32 @@
 </div>
 
 <!-- Export cards -->
+{% if es_admin %}
+<!-- Admin: descarga de todos los usuarios -->
+<div class="card mb-4" style="border-left:4px solid #1E90FF;">
+    <div class="p-3" style="background:#EFF6FF;border-radius:inherit;">
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <i class="bi bi-shield-lock-fill" style="color:#1E90FF;font-size:18px;"></i>
+            <span style="font-weight:700;color:#1A3A5C;font-size:14px;">Exportación Administrador — Todos los usuarios</span>
+        </div>
+        <p style="font-size:12.5px;color:#475569;margin-bottom:12px;">
+            Como administrador puedes descargar los datos consolidados de todos los pacientes del sistema.
+        </p>
+        <div class="row g-2">
+            <div class="col-md-6">
+                <a href="{% url 'reportes:csv_admin_clinico' %}" class="btn btn-success w-100">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV Clínico — Todos los pacientes
+                </a>
+            </div>
+            <div class="col-md-6">
+                <a href="{% url 'reportes:csv_admin_predicciones' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV Predicciones — Todos los pacientes
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
 <div class="row g-3 mb-4">
     <div class="col-md-6">
         <div class="card h-100">
@@ -56,6 +82,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- Download history -->
 <div class="card">
@@ -67,12 +94,14 @@
         <table class="table mb-0">
             <thead>
                 <tr>
+                    {% if es_admin %}<th>Paciente</th>{% endif %}
                     <th>Tipo</th><th>Formato</th><th>Estado</th><th>Generado</th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in reportes %}
                 <tr>
+                    {% if es_admin %}<td style="font-size:12.5px;">{{ r.paciente.nombre }} {{ r.paciente.apellido }}</td>{% endif %}
                     <td>{{ r.get_tipo_display }}</td>
                     <td>
                         <span class="badge {% if r.formato == 'csv' %}bg-success{% else %}bg-danger{% endif %}">

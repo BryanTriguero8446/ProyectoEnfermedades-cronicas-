@@ -7,4 +7,7 @@ urlpatterns = [
     path('', views.lista_reportes, name='lista'),
     path('csv/clinico/', views.generar_csv, name='csv_clinico'),
     path('csv/predicciones/', views.generar_csv_predicciones, name='csv_predicciones'),
+    # Admin — todos los usuarios
+    path('admin/csv/clinico/', views.generar_csv_admin_clinico, name='csv_admin_clinico'),
+    path('admin/csv/predicciones/', views.generar_csv_admin_predicciones, name='csv_admin_predicciones'),
 ]

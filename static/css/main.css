@@ -34,6 +34,8 @@
   --shadow:         0 2px 8px rgba(30,144,255,.10);
   --shadow-md:      0 6px 18px rgba(30,144,255,.13);
   --shadow-lg:      0 14px 30px rgba(30,144,255,.15);
+
+  --sidebar-w-collapsed: 68px;
 }
 
 /* ── Reset ── */
@@ -624,3 +626,156 @@ body {
   animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* =====================================================
+   SIDEBAR COLLAPSE BUTTON
+   ===================================================== */
+.sidebar-collapse-btn {
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.70);
+  border-radius: 7px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s, color .15s;
+  margin-left: auto;
+}
+.sidebar-collapse-btn:hover {
+  background: rgba(255,255,255,.25);
+  color: #fff;
+}
+
+/* =====================================================
+   NAV GROUPS (collapsible sub-menus)
+   ===================================================== */
+.nav-group { position: relative; }
+
+.nav-group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 20px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.75);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background .15s, color .15s;
+}
+.nav-group-header:hover {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+}
+.nav-group-header > i:first-child {
+  font-size: 17px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-group-arrow {
+  font-size: 11px;
+  transition: transform .25s ease;
+}
+.nav-group.open .nav-group-arrow {
+  transform: rotate(-180deg);
+}
+
+.nav-group-items {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height .3s ease;
+  background: rgba(0,0,0,.10);
+}
+.nav-group.open .nav-group-items {
+  max-height: 300px;
+}
+
+/* Sub-level nav links */
+.nav-link-sub {
+  padding-left: 36px !important;
+  font-size: 13px !important;
+}
+.nav-link-sub > i { font-size: 14px !important; }
+
+/* =====================================================
+   COLLAPSED SIDEBAR (desktop icon-only mode)
+   ===================================================== */
+.sidebar.collapsed {
+  width: var(--sidebar-w-collapsed);
+}
+
+.sidebar.collapsed .sidebar-brand {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 10px;
+  gap: 8px;
+}
+.sidebar.collapsed .brand-text    { display: none; }
+.sidebar.collapsed .sidebar-collapse-btn { margin-left: 0; }
+
+.sidebar.collapsed .nav-section-label {
+  height: 4px;
+  padding: 0;
+  font-size: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.sidebar.collapsed .nav-link-item {
+  justify-content: center;
+  padding: 12px 0;
+}
+.sidebar.collapsed .nav-link-item > span { display: none; }
+.sidebar.collapsed .nav-link-item > i    { width: auto; }
+.sidebar.collapsed .badge-count          { display: none !important; }
+
+.sidebar.collapsed .nav-group-header {
+  justify-content: center;
+  padding: 12px 0;
+}
+.sidebar.collapsed .nav-group-header > span { display: none; }
+.sidebar.collapsed .nav-group-header > i:first-child { width: auto; }
+.sidebar.collapsed .nav-group-arrow   { display: none; }
+.sidebar.collapsed .nav-group-items   { display: none; }
+
+.sidebar.collapsed .sidebar-footer {
+  justify-content: center;
+  padding: 14px 10px;
+}
+.sidebar.collapsed .user-details { display: none; }
+
+/* Main content shifts when sidebar collapses on desktop */
+.main-wrapper.sidebar-collapsed {
+  margin-left: var(--sidebar-w-collapsed);
+}
+
+/* On mobile the collapse class must not shrink the sidebar */
+@media (max-width: 992px) {
+  .sidebar.collapsed             { width: var(--sidebar-w); }
+  .main-wrapper.sidebar-collapsed { margin-left: 0; }
+}
+
+/* =====================================================
+   TIME ESTIMATE BADGE (prediccion/resultado.html)
+   ===================================================== */
+.tiempo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.tiempo-badge.bajo  { background: #d5f5e3; color: #1a8a4a; }
+.tiempo-badge.medio { background: #fff3cc; color: #c47a00; }
+.tiempo-badge.alto  { background: #ffe0df; color: #D63031; }

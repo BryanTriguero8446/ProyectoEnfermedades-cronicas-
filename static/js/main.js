@@ -98,4 +98,52 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el =>
     new bootstrap.Tooltip(el)
   );
+
+  // Auto-expand nav group if it contains the active page link
+  document.querySelectorAll('.nav-group').forEach(function (group) {
+    if (group.querySelector('.nav-link-item.active')) {
+      group.classList.add('open');
+    }
+  });
 });
+
+// ── Desktop sidebar collapse (icon-only mode) ─────────────────────────────
+(function () {
+  const sidebar     = document.getElementById('sidebar');
+  const collapseBtn = document.getElementById('sidebarCollapseBtn');
+  const wrapper     = document.getElementById('mainWrapper');
+  if (!sidebar || !collapseBtn || !wrapper) return;
+
+  var STORE_KEY = 'sidebarCollapsed';
+
+  function applyCollapse(collapsed) {
+    if (collapsed) {
+      sidebar.classList.add('collapsed');
+      wrapper.classList.add('sidebar-collapsed');
+      collapseBtn.title = 'Expandir menú';
+      collapseBtn.querySelector('i').className = 'bi bi-layout-sidebar';
+    } else {
+      sidebar.classList.remove('collapsed');
+      wrapper.classList.remove('sidebar-collapsed');
+      collapseBtn.title = 'Colapsar menú';
+      collapseBtn.querySelector('i').className = 'bi bi-layout-sidebar-reverse';
+    }
+  }
+
+  // Restore saved state (before paint to avoid layout shift)
+  var saved = localStorage.getItem(STORE_KEY);
+  if (saved === 'true') applyCollapse(true);
+
+  collapseBtn.addEventListener('click', function () {
+    var isCollapsed = sidebar.classList.contains('collapsed');
+    applyCollapse(!isCollapsed);
+    localStorage.setItem(STORE_KEY, String(!isCollapsed));
+  });
+})();
+
+// ── Nav group toggle (sub-menu expand/collapse) ───────────────────────────
+function toggleNavGroup(id) {
+  var group = document.getElementById(id);
+  if (!group) return;
+  group.classList.toggle('open');
+}

@@ -1,0 +1,361 @@
+{% extends 'base.html' %}
+{% block title %}Estadísticas de Diagnósticos{% endblock %}
+{% block page_title %}Estadísticas de Diagnósticos{% endblock %}
+{% block nav_estadisticas %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+.stat-card {
+    background:#fff;
+    border:1px solid #e2e8f0;
+    border-radius:14px;
+    padding:20px 24px;
+}
+.stat-card .stat-num  { font-size:36px; font-weight:800; line-height:1.1; }
+.stat-card .stat-lbl  { font-size:12px; color:#64748b; margin-top:4px; }
+
+.enf-row {
+    display:flex; align-items:center; gap:14px;
+    padding:12px 0;
+    border-bottom:1px solid #f1f5f9;
+}
+.enf-row:last-child { border-bottom:none; }
+.enf-dot {
+    width:12px; height:12px; border-radius:50%; flex-shrink:0;
+}
+.enf-name { font-size:13.5px; font-weight:600; flex:1; }
+.enf-bars { flex:2; }
+.bar-stack {
+    height:12px; border-radius:6px; overflow:hidden;
+    display:flex;
+}
+.bar-alto  { background:#EF4444; }
+.bar-medio { background:#F97316; }
+.bar-bajo  { background:#10B981; }
+
+.tab-btn {
+    background:none; border:1px solid #e2e8f0; border-radius:8px;
+    padding:6px 16px; font-size:13px; cursor:pointer;
+    color:#64748b; transition:.15s;
+}
+.tab-btn.active, .tab-btn:hover {
+    background:#1A3A5C; color:#fff; border-color:#1A3A5C;
+}
+
+.chart-wrap { position:relative; height:280px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0" style="font-size:13px;">
+        <li class="breadcrumb-item"><a href="{% url 'usuarios:dashboard' %}">Principal</a></li>
+        <li class="breadcrumb-item active">Estadísticas de Diagnósticos</li>
+    </ol>
+</nav>
+
+<!-- ── KPI cards ── -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-num" style="color:#1E90FF;">{{ total_predicciones }}</div>
+            <div class="stat-lbl">Análisis realizados</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-num" style="color:#10B981;">{{ total_pacientes }}</div>
+            <div class="stat-lbl">Pacientes evaluados</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-num" style="color:#EF4444;">
+                {% if top_enf %}{{ top_enf.0.alto }}{% else %}0{% endif %}
+            </div>
+            <div class="stat-lbl">
+                Riesgo alto — {{ top_enf.0.label|default:"—" }}
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-num" style="color:#F97316;">
+                {% if top_enf %}{{ top_enf.0.medio }}{% else %}0{% endif %}
+            </div>
+            <div class="stat-lbl">Riesgo medio — {{ top_enf.0.label|default:"—" }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+
+    <!-- ── Col izquierda: tabla top enfermedades ── -->
+    <div class="col-lg-5">
+        <div class="card mb-3">
+            <div class="card-header-custom">
+                <span class="card-title-custom">
+                    <i class="bi bi-trophy"></i>Top enfermedades diagnosticadas
+                </span>
+            </div>
+            <div class="p-3">
+                {% if total_predicciones == 0 %}
+                <div class="text-center py-4" style="color:#94a3b8;font-size:13px;">
+                    <i class="bi bi-bar-chart" style="font-size:32px;display:block;margin-bottom:8px;opacity:.4;"></i>
+                    Sin datos de predicciones todavía
+                </div>
+                {% else %}
+                {% for enf in top_enf %}
+                <div class="enf-row">
+                    <div class="enf-dot" style="background:{{ enf.color }};"></div>
+                    <div class="enf-name">{{ enf.label }}</div>
+                    <div class="enf-bars">
+                        {% if total_predicciones > 0 %}
+                        <div class="bar-stack">
+                            <div class="bar-alto"  style="width:{% widthratio enf.alto  total_predicciones 100 %}%;"></div>
+                            <div class="bar-medio" style="width:{% widthratio enf.medio total_predicciones 100 %}%;"></div>
+                            <div class="bar-bajo"  style="width:{% widthratio enf.bajo  total_predicciones 100 %}%;"></div>
+                        </div>
+                        {% endif %}
+                        <div style="font-size:11px;color:#64748b;margin-top:3px;">
+                            <span style="color:#EF4444;font-weight:600;">{{ enf.alto }} alto</span>
+                            &nbsp;·&nbsp;
+                            <span style="color:#F97316;">{{ enf.medio }} medio</span>
+                            &nbsp;·&nbsp;
+                            <span style="color:#10B981;">{{ enf.bajo }} bajo</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                <!-- Leyenda -->
+                <div class="d-flex gap-3 mt-3" style="font-size:11.5px;">
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#EF4444;"></span> Alto</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#F97316;"></span> Medio</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#10B981;"></span> Bajo</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Col derecha: gráficos por sexo / edad ── -->
+    <div class="col-lg-7">
+
+        <!-- Tabs -->
+        <div class="d-flex gap-2 mb-3">
+            <button class="tab-btn active" onclick="mostrarGrafico('sexo', this)">
+                <i class="bi bi-gender-ambiguous me-1"></i>Por Sexo
+            </button>
+            <button class="tab-btn" onclick="mostrarGrafico('edad', this)">
+                <i class="bi bi-people me-1"></i>Por Grupo de Edad
+            </button>
+        </div>
+
+        <!-- Gráfico Sexo -->
+        <div id="panel-sexo" class="card">
+            <div class="card-header-custom">
+                <span class="card-title-custom"><i class="bi bi-gender-ambiguous"></i>Diagnósticos por Sexo</span>
+            </div>
+            <div class="p-3">
+                <div class="chart-wrap"><canvas id="chartSexo"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Gráfico Edad -->
+        <div id="panel-edad" class="card" style="display:none;">
+            <div class="card-header-custom">
+                <span class="card-title-custom"><i class="bi bi-people"></i>Diagnósticos por Grupo de Edad</span>
+            </div>
+            <div class="p-3">
+                <div class="chart-wrap"><canvas id="chartEdad"></canvas></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── Tabla resumen completa ── -->
+<div class="card mt-3">
+    <div class="card-header-custom">
+        <span class="card-title-custom"><i class="bi bi-table"></i>Resumen tabular completo</span>
+        <div class="d-flex gap-2">
+            <a href="{% url 'reportes:csv_admin_clinico' %}" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-download me-1"></i>CSV Clínico
+            </a>
+            <a href="{% url 'reportes:csv_admin_predicciones' %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-download me-1"></i>CSV Predicciones
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0" style="font-size:13px;">
+            <thead>
+                <tr style="background:#f8fafc;">
+                    <th>Enfermedad</th>
+                    <th class="text-center" style="color:#EF4444;">Alto</th>
+                    <th class="text-center" style="color:#F97316;">Medio</th>
+                    <th class="text-center" style="color:#10B981;">Bajo</th>
+                    <th class="text-center">% Alto</th>
+                    <th class="text-center">M Alto</th>
+                    <th class="text-center">F Alto</th>
+                    <th class="text-center">Niño</th>
+                    <th class="text-center">Joven</th>
+                    <th class="text-center">Adulto</th>
+                    <th class="text-center">Viejo</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-resumen">
+                <!-- Populated by JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const TOP_ENF   = {{ top_enf_json|safe }};
+const POR_SEXO  = {{ por_sexo_json|safe }};
+const POR_EDAD  = {{ por_edad_json|safe }};
+const TOTAL     = {{ total_predicciones }};
+
+const ENF_LABELS = TOP_ENF.map(e => e.label);
+const ENF_CAMPOS = TOP_ENF.map(e => e.campo);
+
+/* ── Tabs ── */
+function mostrarGrafico(tipo, btn) {
+    document.getElementById('panel-sexo').style.display = tipo === 'sexo' ? '' : 'none';
+    document.getElementById('panel-edad').style.display = tipo === 'edad' ? '' : 'none';
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+/* ── Chart.js helpers ── */
+const ALTO_COLOR  = '#EF4444';
+const MEDIO_COLOR = '#F97316';
+const BAJO_COLOR  = '#10B981';
+
+function makeDatasets(groupData, grupoKeys, nivel) {
+    return grupoKeys.map((g, i) => {
+        const palette = ['#1E90FF','#EC4899','#94A3B8','#10B981','#F97316','#8B5CF6'];
+        const data = ENF_CAMPOS.map(c => (groupData[g] && groupData[g][c]) ? groupData[g][c][nivel] : 0);
+        return {
+            label: g,
+            data: data,
+            backgroundColor: palette[i % palette.length],
+            borderRadius: 4,
+        };
+    });
+}
+
+/* ── Gráfico Sexo ── */
+const ctxSexo = document.getElementById('chartSexo').getContext('2d');
+new Chart(ctxSexo, {
+    type: 'bar',
+    data: {
+        labels: ENF_LABELS,
+        datasets: [
+            {
+                label: 'Masculino — Alto',
+                data: ENF_CAMPOS.map(c => POR_SEXO.M && POR_SEXO.M[c] ? POR_SEXO.M[c].alto : 0),
+                backgroundColor: '#1E90FF', borderRadius: 4,
+            },
+            {
+                label: 'Femenino — Alto',
+                data: ENF_CAMPOS.map(c => POR_SEXO.F && POR_SEXO.F[c] ? POR_SEXO.F[c].alto : 0),
+                backgroundColor: '#EC4899', borderRadius: 4,
+            },
+            {
+                label: 'No especificado — Alto',
+                data: ENF_CAMPOS.map(c => POR_SEXO['?'] && POR_SEXO['?'][c] ? POR_SEXO['?'][c].alto : 0),
+                backgroundColor: '#94A3B8', borderRadius: 4,
+            },
+        ],
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } },
+                 grid: { color: '#f1f5f9' } },
+        },
+    },
+});
+
+/* ── Gráfico Edad ── */
+const ctxEdad = document.getElementById('chartEdad').getContext('2d');
+new Chart(ctxEdad, {
+    type: 'bar',
+    data: {
+        labels: ENF_LABELS,
+        datasets: [
+            {
+                label: 'Niño (0–12)',
+                data: ENF_CAMPOS.map(c => POR_EDAD['Niño'] && POR_EDAD['Niño'][c] ? POR_EDAD['Niño'][c].alto : 0),
+                backgroundColor: '#10B981', borderRadius: 4,
+            },
+            {
+                label: 'Joven (13–30)',
+                data: ENF_CAMPOS.map(c => POR_EDAD['Joven'] && POR_EDAD['Joven'][c] ? POR_EDAD['Joven'][c].alto : 0),
+                backgroundColor: '#3B82F6', borderRadius: 4,
+            },
+            {
+                label: 'Adulto (31–60)',
+                data: ENF_CAMPOS.map(c => POR_EDAD['Adulto'] && POR_EDAD['Adulto'][c] ? POR_EDAD['Adulto'][c].alto : 0),
+                backgroundColor: '#F97316', borderRadius: 4,
+            },
+            {
+                label: 'Viejo (61+)',
+                data: ENF_CAMPOS.map(c => POR_EDAD['Viejo'] && POR_EDAD['Viejo'][c] ? POR_EDAD['Viejo'][c].alto : 0),
+                backgroundColor: '#EF4444', borderRadius: 4,
+            },
+        ],
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } },
+                 grid: { color: '#f1f5f9' } },
+        },
+    },
+});
+
+/* ── Tabla resumen ── */
+(function buildTable() {
+    const tbody = document.getElementById('tabla-resumen');
+    TOP_ENF.forEach(enf => {
+        const pctAlto = TOTAL > 0 ? (enf.alto / TOTAL * 100).toFixed(1) : '0.0';
+        const mAlto = POR_SEXO.M && POR_SEXO.M[enf.campo] ? POR_SEXO.M[enf.campo].alto : 0;
+        const fAlto = POR_SEXO.F && POR_SEXO.F[enf.campo] ? POR_SEXO.F[enf.campo].alto : 0;
+        const ninoA  = POR_EDAD['Niño']  && POR_EDAD['Niño'][enf.campo]  ? POR_EDAD['Niño'][enf.campo].alto  : 0;
+        const jovenA = POR_EDAD['Joven'] && POR_EDAD['Joven'][enf.campo] ? POR_EDAD['Joven'][enf.campo].alto : 0;
+        const adultA = POR_EDAD['Adulto']&& POR_EDAD['Adulto'][enf.campo]? POR_EDAD['Adulto'][enf.campo].alto: 0;
+        const viejoA = POR_EDAD['Viejo'] && POR_EDAD['Viejo'][enf.campo] ? POR_EDAD['Viejo'][enf.campo].alto : 0;
+
+        tbody.insertAdjacentHTML('beforeend', `
+        <tr>
+            <td>
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${enf.color};margin-right:6px;"></span>
+                <strong>${enf.label}</strong>
+            </td>
+            <td class="text-center"><span class="badge bg-danger">${enf.alto}</span></td>
+            <td class="text-center"><span class="badge bg-warning text-dark">${enf.medio}</span></td>
+            <td class="text-center"><span class="badge bg-success">${enf.bajo}</span></td>
+            <td class="text-center" style="font-weight:700;color:#EF4444;">${pctAlto}%</td>
+            <td class="text-center" style="color:#1E90FF;">${mAlto}</td>
+            <td class="text-center" style="color:#EC4899;">${fAlto}</td>
+            <td class="text-center">${ninoA}</td>
+            <td class="text-center">${jovenA}</td>
+            <td class="text-center">${adultA}</td>
+            <td class="text-center">${viejoA}</td>
+        </tr>`);
+    });
+})();
+</script>
+{% endblock %}
