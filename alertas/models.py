@@ -15,6 +15,7 @@ class Alerta(models.Model):
         ('riesgo_alto_renal', 'Riesgo Alto - Renal'),
         ('riesgo_alto_nafld', 'Riesgo Alto - Hígado Graso'),
         ('riesgo_alto_cardiaco', 'Riesgo Alto - Cardíaco'),
+        ('nuevo_usuario', 'Nuevo Usuario Registrado'),
     ]
     SEVERIDAD_CHOICES = [
         ('info', 'Informativo'),

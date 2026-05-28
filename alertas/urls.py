@@ -7,5 +7,6 @@ urlpatterns = [
     path('', views.lista_alertas, name='lista'),
     path('marcar/<int:pk>/', views.marcar_leida, name='marcar_leida'),
     path('marcar-todas/', views.marcar_todas_leidas, name='marcar_todas'),
-    path('api/count/', views.api_alertas_count, name='api_count'),
+    path('api/count/',          views.api_alertas_count,    name='api_count'),
+    path('api/nuevos-usuarios/', views.api_nuevos_usuarios, name='api_nuevos_usuarios'),
 ]

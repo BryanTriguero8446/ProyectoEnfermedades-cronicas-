@@ -47,6 +47,7 @@
             <thead>
                 <tr>
                     <th>Tipo</th>
+                    {% if es_admin %}<th>Paciente</th>{% endif %}
                     <th>Severidad</th>
                     <th>Mensaje</th>
                     <th>Fecha</th>
@@ -63,6 +64,18 @@
                         <div class="text-muted-sm">Reg. #{{ a.datos_clinicos.pk }}</div>
                         {% endif %}
                     </td>
+                    {% if es_admin %}
+                    <td style="font-size:13px;">
+                        {% if a.tipo == 'nuevo_usuario' %}
+                        <span class="badge bg-info text-dark">
+                            <i class="bi bi-person-plus me-1"></i>Nuevo registro
+                        </span>
+                        {% elif a.paciente %}
+                        <span>{{ a.paciente.nombre }} {{ a.paciente.apellido }}</span>
+                        <div class="text-muted-sm">{{ a.paciente.correo }}</div>
+                        {% endif %}
+                    </td>
+                    {% endif %}
                     <td>
                         <span class="badge bg-{{ a.color_badge }}">
                             <i class="{{ a.icono }} me-1"></i>{{ a.get_severidad_display }}

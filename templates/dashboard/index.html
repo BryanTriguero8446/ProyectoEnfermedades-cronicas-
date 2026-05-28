@@ -43,6 +43,26 @@
 
 {% if es_admin %}
 <!-- ===== ADMIN DASHBOARD ===== -->
+
+<!-- ── Toast container para notificaciones en tiempo real ── -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999;">
+    <div id="toastNuevoUsuario" class="toast align-items-center text-bg-primary border-0 shadow"
+         role="alert" aria-live="assertive" aria-atomic="true"
+         data-bs-delay="7000">
+        <div class="d-flex">
+            <div class="toast-body d-flex align-items-center gap-2">
+                <i class="bi bi-person-plus-fill fs-5"></i>
+                <div>
+                    <div class="fw-bold" style="font-size:14px;">Nuevo usuario registrado</div>
+                    <div id="toastNuevoUsuarioMsg" style="font-size:12.5px;opacity:.9;"></div>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                    data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+    </div>
+</div>
+
 <div class="welcome-banner">
     <div class="welcome-text">
         <h2>Panel de Administración</h2>
@@ -119,6 +139,95 @@
         </table>
     </div>
 </div>
+
+<script>
+(function () {
+    'use strict';
+
+    // ── Constantes ────────────────────────────────────────────────────────
+    const POLL_INTERVAL_MS = 30_000;          // 30 segundos
+    const API_URL          = '/alertas/api/nuevos-usuarios/';
+
+    // Marca de agua inicial = instante de carga de la página (ISO UTC)
+    let marcaAgua = new Date().toISOString();
+
+    // Referencia al elemento del contador de pacientes para actualizarlo
+    const contadorPacientesEl = document.querySelector(
+        '.stat-card .stat-value'   // primera tarjeta del admin = total_pacientes
+    );
+
+    // ── Toast Bootstrap ───────────────────────────────────────────────────
+    const toastEl  = document.getElementById('toastNuevoUsuario');
+    const toastMsg = document.getElementById('toastNuevoUsuarioMsg');
+    const bsToast  = toastEl ? new bootstrap.Toast(toastEl) : null;
+
+    function mostrarToast(alertas) {
+        if (!bsToast || !toastMsg) return;
+        if (alertas.length === 1) {
+            toastMsg.textContent = alertas[0].paciente_nombre + ' acaba de registrarse.';
+        } else {
+            toastMsg.textContent = alertas.length + ' nuevos pacientes se registraron.';
+        }
+        bsToast.show();
+    }
+
+    // ── Actualizar contador en pantalla ───────────────────────────────────
+    function incrementarContador(n) {
+        if (!contadorPacientesEl) return;
+        const actual = parseInt(contadorPacientesEl.textContent, 10);
+        if (!isNaN(actual)) {
+            contadorPacientesEl.textContent = actual + n;
+        }
+    }
+
+    // ── Polling ───────────────────────────────────────────────────────────
+    async function consultarNuevosUsuarios() {
+        try {
+            const url = API_URL + '?desde=' + encodeURIComponent(marcaAgua);
+            const resp = await fetch(url, {
+                method:      'GET',
+                credentials: 'include',   // envía cookie de sesión Django
+                headers:     { 'Accept': 'application/json' },
+            });
+
+            if (resp.status === 403) {
+                // Usuario sin permisos (no debería llegar aquí, pero por seguridad):
+                console.warn('[ClinicalLens] Polling detenido: sin permisos de administrador.');
+                return;   // sin clearInterval; el error no se repetirá en 403
+            }
+
+            if (!resp.ok) {
+                console.warn('[ClinicalLens] Polling: respuesta inesperada', resp.status);
+                return;
+            }
+
+            const data = await resp.json();
+
+            // Actualizar la marca de agua al instante del servidor
+            if (data.server_time) {
+                marcaAgua = data.server_time;
+            }
+
+            if (data.count > 0) {
+                mostrarToast(data.alertas);
+                incrementarContador(data.count);
+                console.info('[ClinicalLens] Nuevos usuarios detectados:', data.count);
+            }
+        } catch (err) {
+            // Error de red: no interrumpir el bucle, intentar en el siguiente ciclo
+            console.warn('[ClinicalLens] Polling: error de red:', err.message);
+        }
+    }
+
+    // ── Iniciar polling cuando el DOM esté listo ──────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+        setInterval(consultarNuevosUsuarios, POLL_INTERVAL_MS);
+        console.info('[ClinicalLens] Polling de nuevos usuarios iniciado (cada ' +
+                     (POLL_INTERVAL_MS / 1000) + 's).');
+    });
+
+})();
+</script>
 
 {% else %}
 <!-- ===== PATIENT DASHBOARD ===== -->
