@@ -113,6 +113,21 @@
                     {% include 'pacientes/_info_row.html' with label="Fecha de registro" value=user.fecha_registro|date:"d/m/Y H:i" %}
                     {% include 'pacientes/_info_row.html' with label="Estado de cuenta" value="Activa" %}
                 </div>
+                <hr class="my-3">
+                <div class="d-flex align-items-center justify-content-between p-3 rounded"
+                     style="background:#fef2f2;border:1px solid #fecaca;">
+                    <div>
+                        <div style="font-size:13px;font-weight:600;color:#991b1b;">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Zona de peligro
+                        </div>
+                        <div style="font-size:12px;color:#b91c1c;margin-top:2px;">
+                            Eliminar tu cuenta de forma permanente y todos tus datos.
+                        </div>
+                    </div>
+                    <a href="{% url 'usuarios:eliminar_cuenta' %}" class="btn btn-outline-danger btn-sm flex-shrink-0 ms-3">
+                        <i class="bi bi-trash3 me-1"></i>Eliminar cuenta
+                    </a>
+                </div>
             </div>
         </div>
     </div>

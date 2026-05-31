@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Eliminar Cuenta{% endblock %}
+{% block page_title %}Eliminar Mi Cuenta{% endblock %}
+{% block nav_perfil %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+.delete-container {
+    max-width: 540px;
+    margin: 0 auto;
+}
+.danger-card {
+    background: #fff;
+    border: 2px solid #ef4444;
+    border-radius: 14px;
+    overflow: hidden;
+}
+.danger-header {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    padding: 24px;
+    text-align: center;
+    color: #fff;
+}
+.danger-header i {
+    font-size: 48px;
+    margin-bottom: 12px;
+    display: block;
+    opacity: .9;
+}
+.danger-header h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 6px;
+}
+.danger-header p {
+    font-size: 13px;
+    opacity: .85;
+    margin: 0;
+}
+.danger-body {
+    padding: 28px;
+}
+.warning-list {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+}
+.warning-list li {
+    font-size: 13px;
+    color: #991b1b;
+    padding: 4px 0;
+    list-style: none;
+}
+.warning-list li::before {
+    content: "\f623";
+    font-family: "bootstrap-icons";
+    margin-right: 8px;
+    color: #ef4444;
+}
+.confirm-field {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 16px;
+}
+.confirm-field label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #991b1b;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 6px;
+    display: block;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delete-container">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0" style="font-size:13px;">
+            <li class="breadcrumb-item"><a href="{% url 'usuarios:dashboard' %}">Principal</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'pacientes:perfil' %}">Mi Perfil</a></li>
+            <li class="breadcrumb-item active text-danger">Eliminar Cuenta</li>
+        </ol>
+    </nav>
+
+    <div class="danger-card">
+        <div class="danger-header">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <h3>Eliminar cuenta permanentemente</h3>
+            <p>Esta accion no se puede deshacer</p>
+        </div>
+
+        <div class="danger-body">
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} d-flex align-items-center gap-2" style="font-size:13px;">
+                <i class="bi bi-{% if message.tags == 'error' %}x-circle{% else %}check-circle{% endif %}"></i>
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <div class="warning-list">
+                <div class="fw-bold mb-2" style="font-size:13px;color:#991b1b;">
+                    <i class="bi bi-exclamation-circle me-1"></i>Al eliminar tu cuenta se perdera:
+                </div>
+                <ul class="mb-0">
+                    <li>Todos tus registros clinicos y datos biometricos</li>
+                    <li>Tu historial de predicciones de riesgo</li>
+                    <li>Todas las alertas generadas por el sistema</li>
+                    <li>Tu perfil y datos personales</li>
+                    <li>Los reportes generados previamente</li>
+                </ul>
+            </div>
+
+            <form method="post" id="formEliminar">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label fw-600" style="font-size:13px;">
+                        <i class="bi bi-lock me-1"></i>Ingresa tu contrasena actual
+                    </label>
+                    <input type="password" name="password" class="form-control" required
+                           placeholder="Tu contrasena actual"
+                           autocomplete="current-password">
+                </div>
+
+                <div class="confirm-field">
+                    <label>Escribe <strong style="font-size:14px;letter-spacing:2px;">ELIMINAR</strong> para confirmar</label>
+                    <input type="text" name="confirmar" id="confirmarInput" class="form-control"
+                           placeholder="ELIMINAR" required autocomplete="off"
+                           style="text-transform:uppercase;letter-spacing:2px;text-align:center;font-weight:700;">
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <a href="{% url 'pacientes:perfil' %}" class="btn btn-outline-secondary flex-fill">
+                        <i class="bi bi-arrow-left me-1"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-danger flex-fill" id="btnEliminar" disabled>
+                        <i class="bi bi-trash3 me-1"></i>Eliminar mi cuenta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="text-center mt-3" style="font-size:12px;color:#94a3b8;">
+        <i class="bi bi-shield-check me-1"></i>
+        Tu informacion es confidencial y no sera compartida con terceros.
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('confirmarInput');
+    const btn   = document.getElementById('btnEliminar');
+
+    input.addEventListener('input', function() {
+        btn.disabled = input.value.trim().toUpperCase() !== 'ELIMINAR';
+    });
+
+    document.getElementById('formEliminar').addEventListener('submit', function(e) {
+        if (!confirm('¿Estas COMPLETAMENTE SEGURO de que deseas eliminar tu cuenta? Esta accion NO se puede deshacer.')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

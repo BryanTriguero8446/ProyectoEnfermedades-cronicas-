@@ -5,6 +5,7 @@ from datetime import timedelta
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.http import JsonResponse
 from django.core.mail import send_mail
 from django.conf import settings as django_settings
@@ -338,6 +339,48 @@ def estadisticas_view(request):
         'total_pacientes':  total_pacientes,
     }
     return render(request, 'admin/estadisticas.html', context)
+
+
+@login_required(login_url='usuarios:login')
+def eliminar_cuenta_view(request):
+    """
+    Permite al usuario eliminar su propia cuenta.
+    Requiere confirmación con contraseña actual.
+    """
+    if request.method == 'POST':
+        password = request.POST.get('password', '')
+        confirmar = request.POST.get('confirmar', '')
+
+        if confirmar != 'ELIMINAR':
+            messages.error(request, 'Debes escribir ELIMINAR para confirmar.')
+            return render(request, 'auth/eliminar_cuenta.html')
+
+        if not request.user.check_password(password):
+            messages.error(request, 'La contraseña es incorrecta.')
+            return render(request, 'auth/eliminar_cuenta.html')
+
+        # Desactivar cuenta (soft delete) en lugar de borrar permanentemente
+        usuario = request.user
+        usuario.activo = False
+        usuario.is_active = False
+        usuario.save(update_fields=['activo', 'is_active'])
+
+        # Registrar acción en historial
+        try:
+            from clinico.models import HistorialAccesos
+            HistorialAccesos.objects.create(
+                id_usuario=usuario,
+                accion='cuenta_eliminada',
+                ip=get_client_ip(request)
+            )
+        except Exception:
+            pass
+
+        logout(request)
+        messages.success(request, 'Tu cuenta ha sido eliminada exitosamente.')
+        return redirect('usuarios:login')
+
+    return render(request, 'auth/eliminar_cuenta.html')
 
 
 # ============= VISTAS API REST =============

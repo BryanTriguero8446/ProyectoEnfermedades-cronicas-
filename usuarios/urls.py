@@ -16,6 +16,9 @@ urlpatterns = [
     path('verificar-codigo/', views.verificacion_enviada_view, name='verificacion_enviada'),
     path('reenviar-verificacion/', views.reenviar_verificacion_view, name='reenviar_verificacion'),
 
+    # Gestión de cuenta
+    path('eliminar-cuenta/', views.eliminar_cuenta_view, name='eliminar_cuenta'),
+
     # API REST
     path('api/me/', views.obtener_perfil, name='api_perfil'),
 ]

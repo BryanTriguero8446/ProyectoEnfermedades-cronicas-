@@ -118,7 +118,7 @@
                                    onblur="bloquear(this);calcIMC();validar(this,'peso')">
                             <span class="unit-label">kg</span>
                         </div>
-                        <div class="range-hint">Rango válido: 1 – 300 kg</div>
+                        <div class="range-hint">Rango válido: 3– 300 kg</div>
                         <div class="range-feedback" id="fb-peso"></div>
                     </div>
                     <div class="col-md-4">
@@ -284,7 +284,7 @@
                     <div class="row g-2 ms-0">
                         <div class="col-md-6">
                             <div class="p-3 rounded border-2" style="background:#fff5e6;border:2px solid #fbbf24;cursor:pointer;transition:all .2s;"
-                                 onclick="document.getElementById('antec_diabetes_uno').click();">
+                                 onclick="toggleAntec(event, 'antec_diabetes_uno')">
                                 <div class="form-check mb-0">
                                     <input class="form-check-input antec-checkbox" type="checkbox"
                                            name="antec_diabetes_uno" id="antec_diabetes_uno"
@@ -300,7 +300,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="p-3 rounded border-2" style="background:#ffe0e0;border:2px solid #ef4444;cursor:pointer;transition:all .2s;"
-                                 onclick="document.getElementById('antec_diabetes_ambos').click();">
+                                 onclick="toggleAntec(event, 'antec_diabetes_ambos')">
                                 <div class="form-check mb-0">
                                     <input class="form-check-input antec-checkbox" type="checkbox"
                                            name="antec_diabetes_ambos" id="antec_diabetes_ambos"
@@ -330,7 +330,7 @@
                     <div class="row g-2 ms-0">
                         <div class="col-md-6">
                             <div class="p-3 rounded border-2" style="background:#fff5e6;border:2px solid #fbbf24;cursor:pointer;transition:all .2s;"
-                                 onclick="document.getElementById('antec_hta_uno').click();">
+                                 onclick="toggleAntec(event, 'antec_hta_uno')">
                                 <div class="form-check mb-0">
                                     <input class="form-check-input antec-checkbox" type="checkbox"
                                            name="antec_hta_uno" id="antec_hta_uno"
@@ -346,7 +346,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="p-3 rounded border-2" style="background:#ffe0e0;border:2px solid #ef4444;cursor:pointer;transition:all .2s;"
-                                 onclick="document.getElementById('antec_hta_ambos').click();">
+                                 onclick="toggleAntec(event, 'antec_hta_ambos')">
                                 <div class="form-check mb-0">
                                     <input class="form-check-input antec-checkbox" type="checkbox"
                                            name="antec_hta_ambos" id="antec_hta_ambos"
@@ -369,7 +369,7 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="p-3 rounded border-2 h-100" style="background:#f3e8ff;border:1px solid #d8b4fe;cursor:pointer;transition:all .2s;"
-                                 onclick="document.getElementById('antec_renal').click();">
+                                 onclick="toggleAntec(event, 'antec_renal')">
                                 <div class="form-check mb-0">
                                     <input class="form-check-input" type="checkbox"
                                            name="antec_renal" id="antec_renal"
@@ -384,7 +384,7 @@
                         </div>
                         <div class="col-md-4">
                             <div class="p-3 rounded border-2 h-100" style="background:#f0fdf4;border:1px solid #bbf7d0;cursor:pointer;transition:all .2s;"
-                                 onclick="document.getElementById('antec_nafld').click();">
+                                 onclick="toggleAntec(event, 'antec_nafld')">
                                 <div class="form-check mb-0">
                                     <input class="form-check-input" type="checkbox"
                                            name="antec_nafld" id="antec_nafld"
@@ -402,7 +402,7 @@
                         </div>
                         <div class="col-md-4">
                             <div class="p-3 rounded border-2 h-100" style="background:#fee2e2;border:1px solid #fecaca;cursor:pointer;transition:all .2s;"
-                                 onclick="document.getElementById('antec_cardiaco').click();">
+                                 onclick="toggleAntec(event, 'antec_cardiaco')">
                                 <div class="form-check mb-0">
                                     <input class="form-check-input" type="checkbox"
                                            name="antec_cardiaco" id="antec_cardiaco"
@@ -549,7 +549,7 @@
 <script>
 const RANGOS = {
     edad:               { min:1,   max:120,  warnLo:null, warnHi:null,  msgErr:'Valor fuera de rango (1–120 años)' },
-    peso:               { min:1,   max:300,  warnLo:null, warnHi:null,  msgErr:'Valor fuera de rango (1–300 kg)' },
+    peso:               { min:3,   max:300,  warnLo:null, warnHi:null,  msgErr:'Valor fuera de rango (1–300 kg)' },
     altura:             { min:0.5, max:2.5,  warnLo:null, warnHi:null,  msgErr:'Valor fuera de rango (0.50–2.50 m)' },
     presion_sistolica:  { min:50,  max:300,  warnLo:null, warnHi:120,   msgErr:'Fuera de rango (50–300 mmHg)',  msgWarn:'Presión elevada — normal <120 mmHg' },
     presion_diastolica: { min:30,  max:200,  warnLo:null, warnHi:80,    msgErr:'Fuera de rango (30–200 mmHg)',  msgWarn:'Presión elevada — normal <80 mmHg' },
@@ -677,6 +677,18 @@ document.addEventListener('DOMContentLoaded', function() {
         new bootstrap.Tooltip(el);
     });
 });
+
+/* ─── Toggle antecedentes: card completa clickeable sin doble-toggle ──── */
+function toggleAntec(event, checkboxId) {
+    const checkbox = document.getElementById(checkboxId);
+    if (!checkbox) return;
+    // Si el click fue directamente en el checkbox o su label, no hacer nada extra
+    // (el checkbox ya se togglea solo)
+    if (event.target === checkbox || event.target.tagName === 'LABEL') return;
+    checkbox.checked = !checkbox.checked;
+    // Disparar evento change para que la exclusión mutua funcione
+    checkbox.dispatchEvent(new Event('change'));
+}
 
 /* ─── Exclusividad de checkboxes (uno vs ambos padres) ─────────────────── */
 document.querySelectorAll('.antec-checkbox').forEach(function(cb) {
