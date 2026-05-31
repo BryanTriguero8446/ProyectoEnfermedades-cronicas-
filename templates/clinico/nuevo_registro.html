@@ -664,7 +664,7 @@ document.getElementById('formClinico').addEventListener('submit', function(e) {
 
 /* Si estamos en modo edición, inicializar IMC y feedback al cargar */
 document.addEventListener('DOMContentLoaded', function() {
-    const enEdicion = {{ registro|yesno:"true,false" }};
+    const enEdicion = {% if registro %}true{% else %}false{% endif %};
     if (enEdicion) {
         calcIMC();
         [...CAMPOS_REQUIRED, ...CAMPOS_OPC].forEach(function(id) {
