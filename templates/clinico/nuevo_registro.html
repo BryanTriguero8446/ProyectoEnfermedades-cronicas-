@@ -4,6 +4,13 @@
 {% block nav_nuevo %}{% if not registro %}active{% endif %}{% endblock %}
 
 {% block extra_css %}
+<!-- Data para JavaScript -->
+<script type="application/json" id="dataJson">
+{
+    "enEdicion": {% if registro %}true{% else %}false{% endif %}
+}
+</script>
+
 <style>
 .section-card {
     background: #fff;
@@ -664,7 +671,11 @@ document.getElementById('formClinico').addEventListener('submit', function(e) {
 
 /* Si estamos en modo edición, inicializar IMC y feedback al cargar */
 document.addEventListener('DOMContentLoaded', function() {
-    const enEdicion = {% if registro %}true{% else %}false{% endif %};
+    // Leer datos del JSON embebido
+    const dataEl = document.getElementById('dataJson');
+    const data = dataEl ? JSON.parse(dataEl.textContent) : {};
+    const enEdicion = data.enEdicion || false;
+
     if (enEdicion) {
         calcIMC();
         [...CAMPOS_REQUIRED, ...CAMPOS_OPC].forEach(function(id) {
