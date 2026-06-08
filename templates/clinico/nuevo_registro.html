@@ -107,12 +107,17 @@
                         <div class="input-group">
                             <input type="number" class="form-control" name="edad" id="edad"
                                    min="1" max="120" placeholder="35" required
-                                   value="{% if registro %}{{ registro.edad }}{% endif %}"
+                                   value="{% if registro %}{{ registro.edad }}{% elif edad_perfil %}{{ edad_perfil }}{% endif %}"
+                                   {% if not registro and edad_perfil %}readonly style="background:#f0f4f8;cursor:not-allowed;"{% endif %}
                                    oninput="validar(this,'edad')"
                                    onblur="bloquear(this);validar(this,'edad')">
                             <span class="unit-label">años</span>
                         </div>
+                        {% if not registro and edad_perfil %}
+                        <div class="range-hint" style="color:#10b981;"><i class="bi bi-check-circle me-1"></i>Calculado de tu fecha de nacimiento</div>
+                        {% else %}
                         <div class="range-hint">Rango válido: 1 – 120 años</div>
+                        {% endif %}
                         <div class="range-feedback" id="fb-edad"></div>
                     </div>
                     <div class="col-md-4">

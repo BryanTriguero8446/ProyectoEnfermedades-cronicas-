@@ -108,14 +108,14 @@
                 {% else %}
                 {% for enf in top_enf %}
                 <div class="enf-row">
-                    <div class="enf-dot" style="background:{{ enf.color }};"></div>
+                    <div class="enf-dot" data-color="{{ enf.color }}"></div>
                     <div class="enf-name">{{ enf.label }}</div>
                     <div class="enf-bars">
                         {% if total_predicciones > 0 %}
                         <div class="bar-stack">
-                            <div class="bar-alto"  style="width:{% widthratio enf.alto  total_predicciones 100 %}%;"></div>
-                            <div class="bar-medio" style="width:{% widthratio enf.medio total_predicciones 100 %}%;"></div>
-                            <div class="bar-bajo"  style="width:{% widthratio enf.bajo  total_predicciones 100 %}%;"></div>
+                            <div class="bar-alto"  data-width="{% widthratio enf.alto  total_predicciones 100 %}"></div>
+                            <div class="bar-medio" data-width="{% widthratio enf.medio total_predicciones 100 %}"></div>
+                            <div class="bar-bajo"  data-width="{% widthratio enf.bajo  total_predicciones 100 %}"></div>
                         </div>
                         {% endif %}
                         <div style="font-size:11px;color:#64748b;margin-top:3px;">
@@ -215,12 +215,16 @@
 {% endblock %}
 
 {% block extra_js %}
+<script type="application/json" id="d-top-enf">{{ top_enf_json|safe }}</script>
+<script type="application/json" id="d-por-sexo">{{ por_sexo_json|safe }}</script>
+<script type="application/json" id="d-por-edad">{{ por_edad_json|safe }}</script>
+<script type="application/json" id="d-total">{{ total_predicciones }}</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const TOP_ENF   = {{ top_enf_json|safe }};
-const POR_SEXO  = {{ por_sexo_json|safe }};
-const POR_EDAD  = {{ por_edad_json|safe }};
-const TOTAL     = {{ total_predicciones }};
+const TOP_ENF  = JSON.parse(document.getElementById('d-top-enf').textContent);
+const POR_SEXO = JSON.parse(document.getElementById('d-por-sexo').textContent);
+const POR_EDAD = JSON.parse(document.getElementById('d-por-edad').textContent);
+const TOTAL    = JSON.parse(document.getElementById('d-total').textContent);
 
 const ENF_LABELS = TOP_ENF.map(e => e.label);
 const ENF_CAMPOS = TOP_ENF.map(e => e.campo);
@@ -269,8 +273,8 @@ new Chart(ctxSexo, {
                 backgroundColor: '#EC4899', borderRadius: 4,
             },
             {
-                label: 'No especificado — Alto',
-                data: ENF_CAMPOS.map(c => POR_SEXO['?'] && POR_SEXO['?'][c] ? POR_SEXO['?'][c].alto : 0),
+                label: 'Otro — Alto',
+                data: ENF_CAMPOS.map(c => POR_SEXO.O && POR_SEXO.O[c] ? POR_SEXO.O[c].alto : 0),
                 backgroundColor: '#94A3B8', borderRadius: 4,
             },
         ],
@@ -357,5 +361,8 @@ new Chart(ctxEdad, {
         </tr>`);
     });
 })();
+
+document.querySelectorAll('[data-width]').forEach(el => { el.style.width = el.dataset.width + '%'; });
+document.querySelectorAll('[data-color]').forEach(el => { el.style.background = el.dataset.color; });
 </script>
 {% endblock %}

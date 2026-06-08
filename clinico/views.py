@@ -40,10 +40,16 @@ def _poblar_datos(datos, post):
 @login_required(login_url='usuarios:login')
 def nuevo_registro(request):
     """Formulario para ingresar nuevos datos clínicos (sólo pacientes)."""
-    # Administradores no pueden crear registros clínicos
     if request.user.rol == 'administrador':
         messages.warning(request, 'Los administradores no tienen permiso para crear registros clínicos.')
         return redirect('usuarios:dashboard')
+
+    # Edad calculada desde fecha_nacimiento del perfil
+    edad_perfil = None
+    try:
+        edad_perfil = request.user.perfil.edad
+    except Exception:
+        pass
 
     if request.method == 'POST':
         try:
@@ -57,7 +63,7 @@ def nuevo_registro(request):
         except Exception as e:
             _manejar_error_validacion(request, e)
 
-    return render(request, 'clinico/nuevo_registro.html')
+    return render(request, 'clinico/nuevo_registro.html', {'edad_perfil': edad_perfil})
 
 
 @login_required(login_url='usuarios:login')

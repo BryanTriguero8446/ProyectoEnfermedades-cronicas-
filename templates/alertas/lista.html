@@ -95,7 +95,7 @@
                     <td>
                         {% if not a.leida %}
                         <button class="btn btn-sm btn-outline-secondary"
-                                onclick="marcarLeida({{ a.pk }}, this)">
+                                data-pk="{{ a.pk }}" onclick="marcarLeida(+this.dataset.pk, this)">
                             Marcar leída
                         </button>
                         {% endif %}
@@ -120,6 +120,29 @@
 
 {% block extra_js %}
 <script>
+function getCookie(name) {
+    const m = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return m ? m[2] : null;
+}
+
+function marcarLeida(pk, btn) {
+    fetch(`/alertas/marcar/${pk}/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': getCookie('csrftoken')},
+    }).then(r => r.json()).then(() => {
+        const row = btn.closest('tr');
+        row.style.opacity = '.5';
+        btn.closest('td').innerHTML = '<span style="font-size:12px;color:#94a3b8;"><i class="bi bi-check2 me-1"></i>Leída</span>';
+    });
+}
+
+function marcarTodasLeidas() {
+    fetch('/alertas/marcar-todas/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': getCookie('csrftoken')},
+    }).then(() => location.reload());
+}
+
 function filtrar(tipo) {
     document.querySelectorAll('.alerta-row').forEach(row => {
         if (tipo === 'all') {

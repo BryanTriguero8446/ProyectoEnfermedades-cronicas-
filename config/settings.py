@@ -59,6 +59,7 @@ DATABASES = {
         'PORT': config('DB_PORT', default='3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
+            'init_command': "SET time_zone = '+00:00'",  # MySQL sesión en UTC, evita CONVERT_TZ con nombres
         },
     }
 }
@@ -121,6 +122,11 @@ USE_I18N = True
 USE_TZ = True
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
+
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+     'OPTIONS': {'min_length': 8}},
+]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')           # ✅ AGREGADO

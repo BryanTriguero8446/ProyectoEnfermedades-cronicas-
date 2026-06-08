@@ -1,3 +1,4 @@
+from datetime import date
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import Usuario
@@ -12,10 +13,15 @@ SEXO_CHOICES_REGISTRO = [
 
 
 class RegistroForm(UserCreationForm):
-    correo   = forms.EmailField(required=True)
-    nombre   = forms.CharField(max_length=100, required=True)
-    apellido = forms.CharField(max_length=100, required=True)
-    sexo     = forms.ChoiceField(choices=SEXO_CHOICES_REGISTRO, required=False)
+    correo           = forms.EmailField(required=True)
+    nombre           = forms.CharField(max_length=100, required=True)
+    apellido         = forms.CharField(max_length=100, required=True)
+    sexo             = forms.ChoiceField(choices=SEXO_CHOICES_REGISTRO, required=False)
+    fecha_nacimiento = forms.DateField(
+        required=True,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label='Fecha de nacimiento',
+    )
 
     class Meta:
         model  = Usuario
@@ -26,3 +32,16 @@ class RegistroForm(UserCreationForm):
         if Usuario.objects.filter(correo=correo).exists():
             raise forms.ValidationError('Este correo ya está registrado.')
         return correo
+
+    def clean_fecha_nacimiento(self):
+        fn = self.cleaned_data.get('fecha_nacimiento')
+        if fn:
+            hoy = date.today()
+            if fn >= hoy:
+                raise forms.ValidationError('La fecha de nacimiento debe ser anterior a hoy.')
+            edad = hoy.year - fn.year - ((hoy.month, hoy.day) < (fn.month, fn.day))
+            if edad < 1:
+                raise forms.ValidationError('Debes tener al menos 1 año.')
+            if edad > 120:
+                raise forms.ValidationError('Fecha de nacimiento no válida.')
+        return fn
