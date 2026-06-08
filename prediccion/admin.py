@@ -8,5 +8,4 @@ class PrediccionAdmin(admin.ModelAdmin):
                     'riesgo_cardiaco', 'modelo_version', 'fecha_prediccion')
     list_filter = ('nivel_diabetes', 'nivel_cardiaco', 'modelo_version')
     search_fields = ('paciente__nombre', 'paciente__apellido')
-    date_hierarchy = 'fecha_prediccion'
     readonly_fields = ('fecha_prediccion',)

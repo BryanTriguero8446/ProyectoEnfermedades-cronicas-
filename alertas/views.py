@@ -15,9 +15,9 @@ from .models import Alerta
 def _alertas_qs(user):
     """Querysey de alertas según el rol del usuario."""
     if user.rol == 'administrador':
-        # Admins ven sus propias alertas + todas las alertas de nuevos registros
+        # Admins ven sus propias alertas + altas y bajas de usuarios
         return Alerta.objects.filter(
-            Q(paciente=user) | Q(tipo='nuevo_usuario')
+            Q(paciente=user) | Q(tipo='nuevo_usuario') | Q(tipo='cuenta_eliminada')
         ).distinct().select_related('paciente')
     return Alerta.objects.filter(paciente=user)
 

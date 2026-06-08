@@ -80,7 +80,20 @@
                 </div>
             </div>
 
-                <div class="col-12">
+            <div class="row g-3 mt-1">
+                <div class="col-sm-6">
+                    <label class="form-label" for="id_fecha_nacimiento">
+                        <i class="bi bi-calendar-heart me-1"></i>Fecha de nacimiento <span class="text-danger">*</span>
+                    </label>
+                    <input type="date" class="form-control {% if form.fecha_nacimiento.errors %}is-invalid{% endif %}"
+                           id="id_fecha_nacimiento" name="fecha_nacimiento"
+                           value="{{ form.fecha_nacimiento.value|default:'' }}"
+                           required>
+                    {% if form.fecha_nacimiento.errors %}
+                    <div class="invalid-feedback">{{ form.fecha_nacimiento.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-sm-6">
                     <label class="form-label" for="id_sexo">
                         <i class="bi bi-person-fill me-1"></i>Sexo
                     </label>
@@ -94,6 +107,7 @@
                     <div class="invalid-feedback">{{ form.sexo.errors.0 }}</div>
                     {% endif %}
                 </div>
+            </div>
 
             <div class="mt-3 p-3 rounded" style="background:#f0f4f8;font-size:12px;color:#64748b;">
                 <i class="bi bi-info-circle me-1"></i>

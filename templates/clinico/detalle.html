@@ -233,19 +233,19 @@
                     <div class="d-flex justify-content-between mb-1" style="font-size:13px;">
                         <span>Diabetes</span><strong>{{ p.riesgo_diabetes }}%</strong>
                     </div>
-                    <div class="risk-bar-wrap"><div class="risk-bar {{ p.nivel_diabetes }}" style="width:{{ p.riesgo_diabetes }}%"></div></div>
+                    <div class="risk-bar-wrap"><div class="risk-bar {{ p.nivel_diabetes }}" data-width="{{ p.riesgo_diabetes }}"></div></div>
                 </div>
                 <div class="mb-2">
                     <div class="d-flex justify-content-between mb-1" style="font-size:13px;">
                         <span>Hipertensión</span><strong>{{ p.riesgo_hipertension }}%</strong>
                     </div>
-                    <div class="risk-bar-wrap"><div class="risk-bar {{ p.nivel_hipertension }}" style="width:{{ p.riesgo_hipertension }}%"></div></div>
+                    <div class="risk-bar-wrap"><div class="risk-bar {{ p.nivel_hipertension }}" data-width="{{ p.riesgo_hipertension }}"></div></div>
                 </div>
                 <div class="mb-2">
                     <div class="d-flex justify-content-between mb-1" style="font-size:13px;">
                         <span>Cardíaco</span><strong>{{ p.riesgo_cardiaco }}%</strong>
                     </div>
-                    <div class="risk-bar-wrap"><div class="risk-bar {{ p.nivel_cardiaco }}" style="width:{{ p.riesgo_cardiaco }}%"></div></div>
+                    <div class="risk-bar-wrap"><div class="risk-bar {{ p.nivel_cardiaco }}" data-width="{{ p.riesgo_cardiaco }}"></div></div>
                 </div>
                 <a href="{% url 'prediccion:resultado' p.pk %}" class="btn btn-outline-primary btn-sm w-100 mt-2">
                     Ver análisis completo
@@ -264,4 +264,10 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('[data-width]').forEach(el => { el.style.width = el.dataset.width + '%'; });
+</script>
 {% endblock %}

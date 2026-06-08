@@ -57,6 +57,20 @@ def _crear_alerta_nuevo_usuario(new_user):
     )
 
 
+def _crear_alerta_cuenta_eliminada(usuario, correo_original):
+    """Crea una alerta de tipo 'cuenta_eliminada' visible para todos los admins."""
+    from alertas.models import Alerta
+    Alerta.objects.create(
+        paciente=usuario,
+        tipo='cuenta_eliminada',
+        severidad='warning',
+        mensaje=(
+            f"Cuenta eliminada: {usuario.nombre} {usuario.apellido} "
+            f"({correo_original})"
+        ),
+    )
+
+
 def get_client_ip(request):
     """Obtener IP del cliente."""
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -148,13 +162,16 @@ def registro_view(request):
             usuario.email_verificado = False   # pendiente de verificación
             usuario.save()
 
-            # Guardar sexo en PerfilPaciente
+            # Crear PerfilPaciente siempre (con sexo y fecha de nacimiento)
+            from pacientes.models import PerfilPaciente
             sexo = form.cleaned_data.get('sexo', '')
+            fecha_nacimiento = form.cleaned_data.get('fecha_nacimiento')
+            perfil, _ = PerfilPaciente.objects.get_or_create(usuario=usuario)
             if sexo:
-                from pacientes.models import PerfilPaciente
-                perfil, _ = PerfilPaciente.objects.get_or_create(usuario=usuario)
                 perfil.sexo = sexo
-                perfil.save()
+            if fecha_nacimiento:
+                perfil.fecha_nacimiento = fecha_nacimiento
+            perfil.save()
 
             # Crear alerta para administradores
             _crear_alerta_nuevo_usuario(usuario)
@@ -264,7 +281,7 @@ def estadisticas_view(request):
 
     predicciones = Prediccion.objects.select_related(
         'datos_clinicos', 'paciente'
-    ).prefetch_related('paciente__perfil').all()
+    ).prefetch_related('paciente__perfil').filter(paciente__activo=True)
 
     ENFERMEDADES = [
         ('diabetes',     'Diabetes Tipo 2',       '#EF4444'),
@@ -300,15 +317,15 @@ def estadisticas_view(request):
     por_sexo = {
         'M': {c: {'alto': 0, 'medio': 0, 'bajo': 0} for c, _, _ in ENFERMEDADES},
         'F': {c: {'alto': 0, 'medio': 0, 'bajo': 0} for c, _, _ in ENFERMEDADES},
-        '?': {c: {'alto': 0, 'medio': 0, 'bajo': 0} for c, _, _ in ENFERMEDADES},
+        'O': {c: {'alto': 0, 'medio': 0, 'bajo': 0} for c, _, _ in ENFERMEDADES},
     }
     for p in predicciones:
         try:
-            sexo = p.paciente.perfil.sexo or '?'
-            if sexo not in por_sexo:
-                sexo = '?'
+            sexo = p.paciente.perfil.sexo or 'O'
+            if sexo not in ('M', 'F'):
+                sexo = 'O'
         except Exception:
-            sexo = '?'
+            sexo = 'O'
         for campo, _, _ in ENFERMEDADES:
             nivel = getattr(p, f'nivel_{campo}', 'bajo')
             por_sexo[sexo][campo][nivel] += 1
@@ -359,11 +376,12 @@ def eliminar_cuenta_view(request):
             messages.error(request, 'La contraseña es incorrecta.')
             return render(request, 'auth/eliminar_cuenta.html')
 
-        # Desactivar cuenta (soft delete) en lugar de borrar permanentemente
+        # Soft delete: conservar el historial médico pero liberar el correo
         usuario = request.user
-        usuario.activo = False
-        usuario.is_active = False
-        usuario.save(update_fields=['activo', 'is_active'])
+        correo_original = usuario.correo
+
+        # Avisar a los administradores ANTES de anonimizar el correo
+        _crear_alerta_cuenta_eliminada(usuario, correo_original)
 
         # Registrar acción en historial
         try:
@@ -375,6 +393,12 @@ def eliminar_cuenta_view(request):
             )
         except Exception:
             pass
+
+        # Desactivar y liberar el correo para que pueda reutilizarse en un nuevo registro
+        usuario.activo = False
+        usuario.email_verificado = False
+        usuario.correo = f"eliminado_{usuario.pk}_{int(timezone.now().timestamp())}@eliminado.local"
+        usuario.save(update_fields=['activo', 'email_verificado', 'correo'])
 
         logout(request)
         messages.success(request, 'Tu cuenta ha sido eliminada exitosamente.')

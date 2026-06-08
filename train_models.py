@@ -1,15 +1,3 @@
-"""
-train_models.py
-───────────────
-Entrena modelos de Machine Learning para las 5 enfermedades cronicas.
-
-Para cada enfermedad genera DOS modelos:
-  1. <enfermedad>_disease.pkl  -> Clasificador binario has_disease (0/1)
-  2. <enfermedad>_risk.pkl     -> Clasificador multiclase risk_level (0=bajo, 1=medio, 2=alto)
-
-Features usadas (6): age, bmi, glucose, systolic_bp, diastolic_bp, cholesterol
-(Se excluye 'gender' porque el modelo de Django no tiene ese campo)
-"""
 import pandas as pd
 import numpy as np
 import joblib
