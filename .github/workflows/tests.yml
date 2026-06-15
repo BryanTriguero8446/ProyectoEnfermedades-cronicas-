@@ -88,7 +88,7 @@ jobs:
 # JOB 2: E2E TESTS CON PLAYWRIGHT (live_server de pytest-django)
 # ═══════════════════════════════════════════════════════════════════════════════
   e2e-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: django-tests
 
     services:
@@ -121,10 +121,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Instalar Playwright y Chromium
+    - name: Instalar dependencias del sistema para Playwright
       run: |
-        playwright install chromium
-        playwright install-deps chromium
+        sudo apt-get update
+        sudo apt-get install -y libasound2 libgbm1 libatk1.0-0 libatk-bridge2.0-0 \
+          libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 \
+          libxfixes3 libxrandr2 libpango-1.0-0 libcairo2 libnss3 libnspr4
+
+    - name: Instalar Playwright y Chromium
+      run: playwright install chromium
 
     - name: Crear archivo .env
       run: |
