@@ -48,7 +48,7 @@ def entrenar_modelo(X_train, y_train, X_test, y_test, multiclase=False):
             modelo.fit(X_train, y_train)
             calibrado = modelo
         else:
-            # Calibrar probabilidades con isotonic regression (5-fold CV interno)
+           
             calibrado = CalibratedClassifierCV(modelo, cv=5, method="isotonic")
             calibrado.fit(X_train, y_train)
 
@@ -83,7 +83,7 @@ def main():
 
         X = df[FEATURES].values
 
-        # ─── Modelo 1: has_disease (binario) ────────────────────────────────
+       
         y_d = df["has_disease"].astype(int).values
         X_tr, X_te, y_tr, y_te = train_test_split(
             X, y_d, test_size=0.2, random_state=42, stratify=y_d
@@ -96,7 +96,7 @@ def main():
             print(f"  [has_disease] {n:18s}: acc={m['acc']:.3f} | f1={m['f1']:.3f} | P={m['precision']:.3f} | R={m['recall']:.3f}")
         print(f"  -> Seleccionado: {nombre_d}")
 
-        # ─── Modelo 2: risk_level (multiclase) ─────────────────────────────
+       
         y_r = df["risk_level"].astype(int).values
         X_tr, X_te, y_tr, y_te = train_test_split(
             X, y_r, test_size=0.2, random_state=42, stratify=y_r
@@ -109,7 +109,7 @@ def main():
             print(f"  [risk_level]  {n:18s}: acc={m['acc']:.3f} | f1={m['f1']:.3f} | P={m['precision']:.3f} | R={m['recall']:.3f}")
         print(f"  -> Seleccionado: {nombre_r}")
 
-        # ─── Guardar ────────────────────────────────────────────────────────
+        
         out_disease = MODELS_DIR / f"{enfermedad}_disease.pkl"
         out_risk    = MODELS_DIR / f"{enfermedad}_risk.pkl"
 
@@ -130,7 +130,7 @@ def main():
             "risk_algo":    nombre_r, "risk_f1":    metricas_r[nombre_r]["f1"], "risk_acc":    metricas_r[nombre_r]["acc"],
         })
 
-    # ─── Resumen final ───────────────────────────────────────────────────────
+    
     print("\n" + "=" * 70)
     print("RESUMEN DE METRICAS")
     print("=" * 70)

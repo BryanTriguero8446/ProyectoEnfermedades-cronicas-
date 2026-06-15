@@ -16,3 +16,12 @@ six==1.17.0
 sqlparse==0.5.5
 threadpoolctl==3.6.0
 tzdata==2026.1
+
+# Testing & QA
+pytest==7.4.4
+pytest-django==4.7.0
+pytest-cov==4.1.0
+coverage==7.4.1
+pytest-playwright==0.4.3
+playwright==1.40.0
+pytest-html==4.1.1
